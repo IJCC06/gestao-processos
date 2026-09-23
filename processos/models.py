@@ -31,6 +31,12 @@ class Processo(models.Model):
     numero_cnj = models.CharField("Número CNJ", max_length=25, unique=True)
     area = models.CharField(max_length=20, choices=Area.choices)
     tribunal = models.CharField("Tribunal/Vara", max_length=150, blank=True)
+    tribunal_alias = models.CharField(
+        "Alias do tribunal (DataJud)",
+        max_length=20,
+        blank=True,
+        help_text="Ex: trt2, tjsp, trf3 — usado para consultar a API do DataJud",
+    )
     fase = models.CharField(max_length=100, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ATIVO)
     valor_causa = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
