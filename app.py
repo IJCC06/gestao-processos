@@ -55,6 +55,20 @@ def register_routes(app):
             usuario = Usuario.query.filter_by(username=request.form.get("username", "").strip()).first()
             if usuario and usuario.check_password(request.form.get("password", "")):
                 login_user(usuario)
+
+                # Consulta o DataJud uma vez a cada login, sem Celery/Redis.
+                resultado = verificar_movimentacoes()
+                if resultado["erros"]:
+                    flash(
+                        f"Consulta de movimentações concluída com {resultado['erros']} ocorrência(s) de erro ou configuração ausente.",
+                        "warning",
+                    )
+                elif resultado["total_processos"]:
+                    flash(
+                        f"Consulta concluída: {resultado['total_novas']} movimentação(ões) nova(s) encontrada(s) em {resultado['total_processos']} processo(s).",
+                        "success",
+                    )
+
                 return redirect(request.args.get("next") or url_for("dashboard"))
             flash("Usuário ou senha inválidos.", "error")
         return render_template("registration/login.html")
