@@ -1,16 +1,1 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prazos</title>
-<style>body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:20px}.acoes{display:flex;gap:12px;margin:20px 0}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd}.vencido{font-weight:bold}.proximo{font-weight:bold}button{cursor:pointer}</style></head>
-<body>
-<a href="{% url 'dashboard' %}">← Painel</a><h1>Prazos</h1>
-<div class="acoes"><a href="{% url 'prazo_create' %}">Novo prazo</a><a href="{% url 'notificacoes' %}">Ver notificações</a></div>
-<form method="get"><label>Status:
-<select name="status"><option value="">Todos</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label> <button type="submit">Filtrar</button></form>
-{% if messages %}{% for message in messages %}<p>{{ message }}</p>{% endfor %}{% endif %}
-{% if prazos %}<table><thead><tr><th>Vencimento</th><th>Prazo</th><th>Processo</th><th>Cliente</th><th>Status</th><th>Ações</th></tr></thead><tbody>
-{% for prazo in prazos %}<tr class="{% if prazo.status == 'pendente' and prazo.dias_restantes < 0 %}vencido{% elif prazo.status == 'pendente' and prazo.dias_restantes <= 7 %}proximo{% endif %}">
-<td>{{ prazo.data_vencimento|date:"d/m/Y" }}</td><td><a href="{% url 'prazo_detail' prazo.pk %}">{{ prazo.titulo }}</a></td><td><a href="{% url 'processo_detail' prazo.processo.pk %}">{{ prazo.processo.numero_cnj }}</a></td><td>{{ prazo.processo.cliente.nome }}</td><td>{{ prazo.get_status_display }}</td>
-<td>{% if prazo.status == 'pendente' %}<form method="post" action="{% url 'prazo_concluir' prazo.pk %}" style="display:inline">{% csrf_token %}<button type="submit">Concluir</button></form>{% endif %} <a href="{% url 'prazo_update' prazo.pk %}">Editar</a></td>
-</tr>{% endfor %}</tbody></table>{% else %}<p>Nenhum prazo encontrado.</p>{% endif %}
-</body></html>
+<html><body><a href="{{ url_for('dashboard') }}">Painel</a><h1>Prazos</h1><a href="{{ url_for('prazo_create') }}">Novo prazo</a><form method="get"><select name="status"><option value="">Todos</option>{% for v,l in status_choices %}<option value="{{ v }}" {% if status==v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select><button>Filtrar</button></form>{% for prazo in prazos %}<p><a href="{{ url_for('prazo_detail',pk=prazo.id) }}">{{ prazo.titulo }}</a> — {{ prazo.data_vencimento.strftime('%d/%m/%Y') }} — {{ prazo.processo.numero_cnj }} — {{ prazo.status_display() }} {% if prazo.status=='pendente' %}<form method="post" action="{{ url_for('prazo_concluir',pk=prazo.id) }}" style="display:inline">{{ csrf_token() }}<button>Concluir</button></form>{% endif %}</p>{% else %}<p>Nenhum prazo.</p>{% endfor %}</body></html>
