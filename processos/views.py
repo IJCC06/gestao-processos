@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ClienteForm
+from .forms import ClienteForm, ProcessoForm
 from .models import Cliente, Movimentacao, Processo
 
 
@@ -117,3 +117,67 @@ def cliente_delete(request, pk):
         "processos/clientes/delete.html",
         {"cliente": cliente},
     )
+
+
+@login_required
+def processo_list(request):
+    busca = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+    processos = Processo.objects.select_related("cliente")
+    if busca:
+        processos = processos.filter(
+            Q(numero_cnj__icontains=busca)
+            | Q(cliente__nome__icontains=busca)
+            | Q(tribunal__icontains=busca)
+        )
+    if status in dict(Processo.Status.choices):
+        processos = processos.filter(status=status)
+    return render(request, "processos/processos/list.html", {
+        "processos": processos,
+        "busca": busca,
+        "status": status,
+        "status_choices": Processo.Status.choices,
+    })
+
+
+@login_required
+def processo_create(request):
+    if request.method == "POST":
+        form = ProcessoForm(request.POST)
+        if form.is_valid():
+            processo = form.save()
+            messages.success(request, "Processo cadastrado com sucesso.")
+            return redirect("processo_detail", pk=processo.pk)
+    else:
+        form = ProcessoForm()
+    return render(request, "processos/processos/form.html", {
+        "form": form,
+        "titulo": "Novo processo",
+    })
+
+
+@login_required
+def processo_detail(request, pk):
+    processo = get_object_or_404(
+        Processo.objects.select_related("cliente").prefetch_related("movimentacoes"),
+        pk=pk,
+    )
+    return render(request, "processos/processos/detail.html", {"processo": processo})
+
+
+@login_required
+def processo_update(request, pk):
+    processo = get_object_or_404(Processo, pk=pk)
+    if request.method == "POST":
+        form = ProcessoForm(request.POST, instance=processo)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Processo atualizado com sucesso.")
+            return redirect("processo_detail", pk=processo.pk)
+    else:
+        form = ProcessoForm(instance=processo)
+    return render(request, "processos/processos/form.html", {
+        "form": form,
+        "titulo": "Editar processo",
+        "processo": processo,
+    })
