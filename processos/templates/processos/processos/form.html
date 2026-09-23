@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ titulo }}</title>
+<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px}form{display:grid;gap:14px}input,select,textarea{padding:10px;font-size:1rem}label{font-weight:bold;display:block;margin-bottom:5px}.erro{color:#a00}</style></head>
+<body><a href="{% if processo %}{% url 'processo_detail' processo.pk %}{% else %}{% url 'processo_list' %}{% endif %}">← Voltar</a><h1>{{ titulo }}</h1>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="erro">{{ error }}</div>{% endfor %}</div>{% endfor %}<button type="submit">Salvar</button></form>
+</body></html>
