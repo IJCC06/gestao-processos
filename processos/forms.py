@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Cliente, Processo
+from .models import Cliente, Prazo, Processo
 
 
 class ClienteForm(forms.ModelForm):
@@ -46,3 +46,35 @@ class ProcessoForm(forms.ModelForm):
         if not valor:
             raise forms.ValidationError("Informe o número do processo.")
         return valor
+
+
+class PrazoForm(forms.ModelForm):
+    class Meta:
+        model = Prazo
+        fields = [
+            "processo",
+            "titulo",
+            "data_inicio",
+            "data_vencimento",
+            "status",
+            "observacoes",
+        ]
+        widgets = {
+            "titulo": forms.TextInput(attrs={"placeholder": "Ex.: Prazo para manifestação"}),
+            "data_inicio": forms.DateInput(attrs={"type": "date"}),
+            "data_vencimento": forms.DateInput(attrs={"type": "date"}),
+            "observacoes": forms.Textarea(
+                attrs={"rows": 5, "placeholder": "Observações sobre este prazo"}
+            ),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        inicio = cleaned_data.get("data_inicio")
+        vencimento = cleaned_data.get("data_vencimento")
+        if inicio and vencimento and vencimento < inicio:
+            self.add_error(
+                "data_vencimento",
+                "A data de vencimento não pode ser anterior à data de início.",
+            )
+        return cleaned_data
