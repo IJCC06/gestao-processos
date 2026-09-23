@@ -24,4 +24,5 @@ urlpatterns = [
     path("prazos/<int:pk>/editar/", views.prazo_update, name="prazo_update"),
     path("prazos/<int:pk>/concluir/", views.prazo_concluir, name="prazo_concluir"),
     path("notificacoes/", views.notificacoes, name="notificacoes"),
+    path("notificacoes/processos/<int:pk>/limpar/", views.limpar_alerta_processo, name="limpar_alerta_processo"),
 ]
