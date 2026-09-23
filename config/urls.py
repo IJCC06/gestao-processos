@@ -6,11 +6,7 @@ from processos import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(
-        "login/",
-        auth_views.LoginView.as_view(template_name="registration/login.html"),
-        name="login",
-    ),
+    path("login/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("", views.dashboard, name="dashboard"),
     path("clientes/", views.cliente_list, name="cliente_list"),
@@ -22,4 +18,10 @@ urlpatterns = [
     path("processos/novo/", views.processo_create, name="processo_create"),
     path("processos/<int:pk>/", views.processo_detail, name="processo_detail"),
     path("processos/<int:pk>/editar/", views.processo_update, name="processo_update"),
+    path("prazos/", views.prazo_list, name="prazo_list"),
+    path("prazos/novo/", views.prazo_create, name="prazo_create"),
+    path("prazos/<int:pk>/", views.prazo_detail, name="prazo_detail"),
+    path("prazos/<int:pk>/editar/", views.prazo_update, name="prazo_update"),
+    path("prazos/<int:pk>/concluir/", views.prazo_concluir, name="prazo_concluir"),
+    path("notificacoes/", views.notificacoes, name="notificacoes"),
 ]
