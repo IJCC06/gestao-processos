@@ -1,100 +1,124 @@
-from django.db import models
-from django.utils import timezone
+from datetime import datetime
+
+from flask_login import UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from .extensions import db
 
 
-class Cliente(models.Model):
-    nome = models.CharField(max_length=200)
-    cpf_cnpj = models.CharField("CPF/CNPJ", max_length=20, unique=True)
-    contato = models.CharField(max_length=100, blank=True)
-    endereco = models.CharField("Endereço", max_length=300, blank=True)
-    observacoes = models.TextField(blank=True)
-    criado_em = models.DateTimeField(auto_now_add=True)
+class Usuario(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
 
-    class Meta:
-        ordering = ["nome"]
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
 
-    def __str__(self):
-        return self.nome
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
-class Processo(models.Model):
-    class Area(models.TextChoices):
-        TRABALHISTA = "trabalhista", "Trabalhista"
-        CIVEL = "civel", "Cível"
-        PREVIDENCIARIO = "previdenciario", "Previdenciário"
-
-    class Status(models.TextChoices):
-        ATIVO = "ativo", "Ativo"
-        SUSPENSO = "suspenso", "Suspenso"
-        ARQUIVADO = "arquivado", "Arquivado"
-
-    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="processos")
-    numero_cnj = models.CharField("Número CNJ", max_length=25, unique=True)
-    area = models.CharField(max_length=20, choices=Area.choices)
-    tribunal = models.CharField("Tribunal/Vara", max_length=150, blank=True)
-    tribunal_alias = models.CharField(
-        "Alias do tribunal (DataJud)",
-        max_length=20,
-        blank=True,
-        help_text="Ex: trt2, tjsp, trf3 — usado para consultar a API do DataJud",
-    )
-    fase = models.CharField(max_length=100, blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ATIVO)
-    valor_causa = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    honorarios = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    alerta_pendente = models.BooleanField(default=False)
-    criado_em = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-criado_em"]
-
-    def __str__(self):
-        return f"{self.numero_cnj} — {self.cliente.nome}"
+class Cliente(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(200), nullable=False)
+    cpf_cnpj = db.Column(db.String(20), unique=True, nullable=False)
+    contato = db.Column(db.String(100), default="")
+    endereco = db.Column(db.String(300), default="")
+    observacoes = db.Column(db.Text, default="")
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    processos = db.relationship("Processo", back_populates="cliente")
 
 
-class Movimentacao(models.Model):
-    processo = models.ForeignKey(Processo, on_delete=models.CASCADE, related_name="movimentacoes")
-    data = models.DateTimeField()
-    descricao = models.TextField()
-    origem = models.CharField(max_length=50, default="datajud")
-    criado_em = models.DateTimeField(auto_now_add=True)
+class Processo(db.Model):
+    class Area:
+        TRABALHISTA = "trabalhista"
+        CIVEL = "civel"
+        PREVIDENCIARIO = "previdenciario"
 
-    class Meta:
-        ordering = ["-data"]
+        @classmethod
+        def choices(cls):
+            return [(cls.TRABALHISTA, "Trabalhista"), (cls.CIVEL, "Cível"), (cls.PREVIDENCIARIO, "Previdenciário")]
 
-    def __str__(self):
-        return f"{self.processo.numero_cnj} — {self.data:%d/%m/%Y}"
+        @classmethod
+        def values(cls):
+            return {item[0] for item in cls.choices()}
+
+    class Status:
+        ATIVO = "ativo"
+        SUSPENSO = "suspenso"
+        ARQUIVADO = "arquivado"
+
+        @classmethod
+        def choices(cls):
+            return [(cls.ATIVO, "Ativo"), (cls.SUSPENSO, "Suspenso"), (cls.ARQUIVADO, "Arquivado")]
+
+        @classmethod
+        def values(cls):
+            return {item[0] for item in cls.choices()}
+
+    id = db.Column(db.Integer, primary_key=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("cliente.id"), nullable=False)
+    numero_cnj = db.Column(db.String(25), unique=True, nullable=False)
+    area = db.Column(db.String(20), nullable=False)
+    tribunal = db.Column(db.String(150), default="")
+    tribunal_alias = db.Column(db.String(20), default="")
+    fase = db.Column(db.String(100), default="")
+    status = db.Column(db.String(20), default=Status.ATIVO, nullable=False)
+    valor_causa = db.Column(db.Numeric(12, 2), nullable=True)
+    honorarios = db.Column(db.Numeric(12, 2), nullable=True)
+    alerta_pendente = db.Column(db.Boolean, default=False, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    cliente = db.relationship("Cliente", back_populates="processos")
+    movimentacoes = db.relationship("Movimentacao", back_populates="processo", cascade="all, delete-orphan", order_by="desc(Movimentacao.data)")
+    prazos = db.relationship("Prazo", back_populates="processo", cascade="all, delete-orphan", order_by="Prazo.data_vencimento")
+
+    def area_display(self):
+        return dict(self.Area.choices()).get(self.area, self.area)
+
+    def status_display(self):
+        return dict(self.Status.choices()).get(self.status, self.status)
 
 
-class Prazo(models.Model):
-    class Status(models.TextChoices):
-        PENDENTE = "pendente", "Pendente"
-        CONCLUIDO = "concluido", "Concluído"
-        CANCELADO = "cancelado", "Cancelado"
+class Movimentacao(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    processo_id = db.Column(db.Integer, db.ForeignKey("processo.id"), nullable=False)
+    data = db.Column(db.DateTime, nullable=False)
+    descricao = db.Column(db.Text, nullable=False)
+    origem = db.Column(db.String(50), default="datajud", nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    processo = db.relationship("Processo", back_populates="movimentacoes")
 
-    processo = models.ForeignKey(
-        Processo,
-        on_delete=models.PROTECT,
-        related_name="prazos",
-    )
-    titulo = models.CharField(max_length=200)
-    data_inicio = models.DateField(null=True, blank=True)
-    data_vencimento = models.DateField()
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.PENDENTE,
-    )
-    observacoes = models.TextField(blank=True)
-    criado_em = models.DateTimeField(auto_now_add=True)
-    atualizado_em = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ["data_vencimento", "titulo"]
+class Prazo(db.Model):
+    class Status:
+        PENDENTE = "pendente"
+        CONCLUIDO = "concluido"
+        CANCELADO = "cancelado"
 
-    def __str__(self):
-        return f"{self.titulo} — {self.processo.numero_cnj}"
+        @classmethod
+        def choices(cls):
+            return [(cls.PENDENTE, "Pendente"), (cls.CONCLUIDO, "Concluído"), (cls.CANCELADO, "Cancelado")]
+
+        @classmethod
+        def values(cls):
+            return {item[0] for item in cls.choices()}
+
+    id = db.Column(db.Integer, primary_key=True)
+    processo_id = db.Column(db.Integer, db.ForeignKey("processo.id"), nullable=False)
+    titulo = db.Column(db.String(200), nullable=False)
+    data_inicio = db.Column(db.Date, nullable=True)
+    data_vencimento = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default=Status.PENDENTE, nullable=False)
+    observacoes = db.Column(db.Text, default="")
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    processo = db.relationship("Processo", back_populates="prazos")
 
     @property
     def dias_restantes(self):
-        return (self.data_vencimento - timezone.localdate()).days
+        from config.settings import Config
+        return (self.data_vencimento - Config.local_date()).days
+
+    def status_display(self):
+        return dict(self.Status.choices()).get(self.status, self.status)
