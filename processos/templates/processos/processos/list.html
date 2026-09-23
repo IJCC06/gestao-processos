@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Processos | Gestão</title>
+<style>body{font-family:Arial,sans-serif;max-width:1150px;margin:40px auto;padding:20px}header{display:flex;justify-content:space-between;align-items:center;gap:20px}input,select,button,a{padding:9px 12px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd}.filtros{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}</style></head>
+<body><header><div><h1>Processos</h1><a href="{% url 'dashboard' %}">← Painel</a></div><a href="{% url 'processo_create' %}">+ Novo processo</a></header>
+<form method="get" class="filtros"><input type="search" name="q" value="{{ busca }}" placeholder="CNJ, cliente ou tribunal">
+<select name="status"><option value="">Todos os status</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button>Filtrar</button></form>
+{% if processos %}<table><thead><tr><th>Processo</th><th>Cliente</th><th>Área</th><th>Status</th><th>Tribunal</th></tr></thead><tbody>
+{% for processo in processos %}<tr><td><a href="{% url 'processo_detail' processo.pk %}">{{ processo.numero_cnj }}</a></td><td>{{ processo.cliente.nome }}</td><td>{{ processo.get_area_display }}</td><td>{{ processo.get_status_display }}</td><td>{{ processo.tribunal|default:"—" }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<p>Nenhum processo encontrado.</p>{% endif %}
+</body></html>
