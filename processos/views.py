@@ -3,13 +3,19 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
-from .forms import ClienteForm, ProcessoForm
-from .models import Cliente, Movimentacao, Processo
+from .forms import ClienteForm, PrazoForm, ProcessoForm
+from .models import Cliente, Movimentacao, Prazo, Processo
 
 
 @login_required
 def dashboard(request):
+    hoje = timezone.localdate()
+    prazos_proximos = Prazo.objects.filter(
+        status=Prazo.Status.PENDENTE,
+        data_vencimento__lte=hoje + timezone.timedelta(days=7),
+    ).select_related("processo", "processo__cliente")
     context = {
         "total_clientes": Cliente.objects.count(),
         "total_processos": Processo.objects.count(),
@@ -17,6 +23,7 @@ def dashboard(request):
             status=Processo.Status.ATIVO
         ).count(),
         "alertas_pendentes": Processo.objects.filter(alerta_pendente=True).count(),
+        "prazos_proximos": prazos_proximos,
         "ultimas_movimentacoes": Movimentacao.objects.select_related(
             "processo", "processo__cliente"
         )[:10],
@@ -159,7 +166,9 @@ def processo_create(request):
 @login_required
 def processo_detail(request, pk):
     processo = get_object_or_404(
-        Processo.objects.select_related("cliente").prefetch_related("movimentacoes"),
+        Processo.objects.select_related("cliente").prefetch_related(
+            "movimentacoes", "prazos"
+        ),
         pk=pk,
     )
     return render(request, "processos/processos/detail.html", {"processo": processo})
@@ -180,4 +189,90 @@ def processo_update(request, pk):
         "form": form,
         "titulo": "Editar processo",
         "processo": processo,
+    })
+
+
+@login_required
+def prazo_list(request):
+    status = request.GET.get("status", "").strip()
+    prazos = Prazo.objects.select_related("processo", "processo__cliente")
+    if status in dict(Prazo.Status.choices):
+        prazos = prazos.filter(status=status)
+    return render(request, "processos/prazos/list.html", {
+        "prazos": prazos,
+        "status": status,
+        "status_choices": Prazo.Status.choices,
+    })
+
+
+@login_required
+def prazo_create(request):
+    if request.method == "POST":
+        form = PrazoForm(request.POST)
+        if form.is_valid():
+            prazo = form.save()
+            messages.success(request, "Prazo cadastrado com sucesso.")
+            return redirect("prazo_list")
+    else:
+        form = PrazoForm()
+    return render(request, "processos/prazos/form.html", {
+        "form": form,
+        "titulo": "Novo prazo",
+    })
+
+
+@login_required
+def prazo_detail(request, pk):
+    prazo = get_object_or_404(
+        Prazo.objects.select_related("processo", "processo__cliente"), pk=pk
+    )
+    return render(request, "processos/prazos/detail.html", {"prazo": prazo})
+
+
+@login_required
+def prazo_update(request, pk):
+    prazo = get_object_or_404(Prazo, pk=pk)
+    if request.method == "POST":
+        form = PrazoForm(request.POST, instance=prazo)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Prazo atualizado com sucesso.")
+            return redirect("prazo_detail", pk=prazo.pk)
+    else:
+        form = PrazoForm(instance=prazo)
+    return render(request, "processos/prazos/form.html", {
+        "form": form,
+        "titulo": "Editar prazo",
+        "prazo": prazo,
+    })
+
+
+@login_required
+def prazo_concluir(request, pk):
+    prazo = get_object_or_404(Prazo, pk=pk)
+    if request.method == "POST":
+        prazo.status = Prazo.Status.CONCLUIDO
+        prazo.save(update_fields=["status", "atualizado_em"])
+        messages.success(request, "Prazo marcado como concluído.")
+    return redirect("prazo_list")
+
+
+@login_required
+def notificacoes(request):
+    hoje = timezone.localdate()
+    prazos = Prazo.objects.filter(
+        status=Prazo.Status.PENDENTE
+    ).select_related("processo", "processo__cliente")
+    vencidos = prazos.filter(data_vencimento__lt=hoje)
+    proximos = prazos.filter(
+        data_vencimento__gte=hoje,
+        data_vencimento__lte=hoje + timezone.timedelta(days=7),
+    )
+    movimentos = Movimentacao.objects.filter(
+        processo__alerta_pendente=True
+    ).select_related("processo", "processo__cliente")
+    return render(request, "processos/notificacoes.html", {
+        "vencidos": vencidos,
+        "prazos_proximos": proximos,
+        "movimentos": movimentos,
     })
