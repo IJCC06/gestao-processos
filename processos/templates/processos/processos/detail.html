@@ -1,17 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ processo.numero_cnj }}</title>
-<style>body{font-family:Arial,sans-serif;max-width:1000px;margin:40px auto;padding:20px}.acoes{display:flex;gap:10px;margin:20px 0}.campo{margin:10px 0}.rotulo{font-weight:bold}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd}.mensagem{padding:10px;border:1px solid #ddd}</style></head>
+<style>body{font-family:Arial,sans-serif;max-width:1000px;margin:40px auto;padding:20px}.acoes{display:flex;gap:10px;margin:20px 0}.campo{margin:10px 0}.rotulo{font-weight:bold}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd}.mensagem{padding:10px;border:1px solid #ddd}.vencido{font-weight:bold}</style></head>
 <body><a href="{% url 'processo_list' %}">← Processos</a><h1>{{ processo.numero_cnj }}</h1>
 {% if messages %}{% for message in messages %}<div class="mensagem">{{ message }}</div>{% endfor %}{% endif %}
-<div class="acoes"><a href="{% url 'processo_update' processo.pk %}">Editar</a><a href="{% url 'cliente_detail' processo.cliente.pk %}">Ver cliente</a></div>
-<div class="campo"><span class="rotulo">Cliente:</span> {{ processo.cliente.nome }}</div>
-<div class="campo"><span class="rotulo">Área:</span> {{ processo.get_area_display }}</div>
-<div class="campo"><span class="rotulo">Status:</span> {{ processo.get_status_display }}</div>
-<div class="campo"><span class="rotulo">Tribunal/Vara:</span> {{ processo.tribunal|default:"—" }}</div>
-<div class="campo"><span class="rotulo">Fase:</span> {{ processo.fase|default:"—" }}</div>
-<div class="campo"><span class="rotulo">Valor da causa:</span> {% if processo.valor_causa %}R$ {{ processo.valor_causa }}{% else %}—{% endif %}</div>
-<div class="campo"><span class="rotulo">Honorários:</span> {% if processo.honorarios %}R$ {{ processo.honorarios }}{% else %}—{% endif %}</div>
-<h2>Movimentações</h2>{% if processo.movimentacoes.all %}<table><thead><tr><th>Data</th><th>Descrição</th><th>Origem</th></tr></thead><tbody>
-{% for movimentacao in processo.movimentacoes.all %}<tr><td>{{ movimentacao.data|date:"d/m/Y H:i" }}</td><td>{{ movimentacao.descricao }}</td><td>{{ movimentacao.origem }}</td></tr>{% endfor %}
-</tbody></table>{% else %}<p>Nenhuma movimentação registrada.</p>{% endif %}
+<div class="acoes"><a href="{% url 'processo_update' processo.pk %}">Editar</a><a href="{% url 'cliente_detail' processo.cliente.pk %}">Ver cliente</a><a href="{% url 'prazo_create' %}">Novo prazo</a></div>
+<div class="campo"><span class="rotulo">Cliente:</span> {{ processo.cliente.nome }}</div><div class="campo"><span class="rotulo">Área:</span> {{ processo.get_area_display }}</div><div class="campo"><span class="rotulo">Status:</span> {{ processo.get_status_display }}</div><div class="campo"><span class="rotulo">Tribunal/Vara:</span> {{ processo.tribunal|default:"—" }}</div><div class="campo"><span class="rotulo">Fase:</span> {{ processo.fase|default:"—" }}</div><div class="campo"><span class="rotulo">Valor da causa:</span> {% if processo.valor_causa %}R$ {{ processo.valor_causa }}{% else %}—{% endif %}</div><div class="campo"><span class="rotulo">Honorários:</span> {% if processo.honorarios %}R$ {{ processo.honorarios }}{% else %}—{% endif %}</div>
+<h2>Prazos</h2>{% if processo.prazos.all %}<table><thead><tr><th>Vencimento</th><th>Prazo</th><th>Status</th><th>Dias restantes</th></tr></thead><tbody>{% for prazo in processo.prazos.all %}<tr class="{% if prazo.status == 'pendente' and prazo.dias_restantes < 0 %}vencido{% endif %}"><td>{{ prazo.data_vencimento|date:"d/m/Y" }}</td><td><a href="{% url 'prazo_detail' prazo.pk %}">{{ prazo.titulo }}</a></td><td>{{ prazo.get_status_display }}</td><td>{{ prazo.dias_restantes }}</td></tr>{% endfor %}</tbody></table>{% else %}<p>Nenhum prazo cadastrado.</p>{% endif %}
+<h2>Movimentações</h2>{% if processo.movimentacoes.all %}<table><thead><tr><th>Data</th><th>Descrição</th><th>Origem</th></tr></thead><tbody>{% for movimentacao in processo.movimentacoes.all %}<tr><td>{{ movimentacao.data|date:"d/m/Y H:i" }}</td><td>{{ movimentacao.descricao }}</td><td>{{ movimentacao.origem }}</td></tr>{% endfor %}</tbody></table>{% else %}<p>Nenhuma movimentação registrada.</p>{% endif %}
 </body></html>
