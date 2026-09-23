@@ -1,96 +1,125 @@
 # Sistema de Gestão de Processos Jurídicos
 
-Sistema web para advogados gerenciarem clientes e acompanharem processos judiciais, com foco nas áreas **trabalhista**, **cível** e **previdenciária**. O sistema integra a API pública do DataJud (CNJ) para monitorar automaticamente movimentações processuais, eliminando a necessidade de consulta manual repetida.
+Sistema web para advogados gerenciarem clientes e acompanharem processos judiciais, com foco nas áreas trabalhista, cível e previdenciária. O sistema integra a API pública do DataJud (CNJ) para monitorar movimentações processuais.
 
 ## Stack
 
-- **Backend**: Python + Django
-- **Banco de dados**: SQLite (produção inicial), com possibilidade de migração para PostgreSQL
-- **Frontend**: HTML/CSS servido pelo próprio Django (templates), com Bootstrap para agilizar o layout
-- **Integração externa**: API Pública do DataJud (CNJ)
+- Backend: Python + Django
+- Banco atual: SQLite
+- Frontend: Django Templates (interface própria em desenvolvimento)
+- Integração externa: API Pública do DataJud (CNJ)
 
----
+## Estado atual
 
-## Funcionalidades
+### Implementado
 
-### Núcleo (MVP)
+- Modelos de clientes, processos e movimentações
+- Relacionamento Cliente → Processo → Movimentação
+- Administração pelo Django Admin
+- Integração com o DataJud
+- Comando para verificar movimentações
+- Prevenção de duplicação de movimentações
+- Credenciais configuradas por variáveis de ambiente
+- Configurações básicas de segurança
 
-- **Cadastro de clientes** — nome, CPF/CNPJ, contato, endereço e observações
-- **Cadastro de processos** — vinculado a um cliente, contendo:
-  - Número único (CNJ)
-  - Área do direito (trabalhista, cível ou previdenciário)
-  - Tribunal/vara ou órgão
-  - Fase atual e status (ativo, arquivado, suspenso)
-- **Monitoramento automático via DataJud** — consulta periódica ao histórico de movimentações de cada processo cadastrado
-- **Alertas de movimentação nova** — o sistema sinaliza no painel quando algo mudou desde a última verificação
-- **Painel de busca e filtro** — localizar processos por cliente, número ou área do direito
-- **Linha do tempo do processo** — histórico de movimentações exibido de forma cronológica
+### Em desenvolvimento
 
-### Extensões futuras (fora do MVP)
+- Login e autenticação da interface
+- Dashboard
+- Cadastro e edição pela interface própria
+- Busca e filtros
+- Linha do tempo
+- Visualização e baixa de alertas
+- Agendamento periódico da verificação
+- Testes automatizados
 
-- Controle de prazos processuais com alertas antecipados
+### Futuro
+
+- Controle de prazos
 - Agenda de audiências
-- Controle financeiro (honorários combinados x recebidos)
-- Suporte a múltiplos advogados/usuários no mesmo escritório
-- Anexação de documentos (procurações, petições, contratos)
+- Controle financeiro
+- Múltiplos advogados/usuários
+- Anexação de documentos
+- Auditoria de acessos e alterações
 
----
+## Verificação de movimentações
 
-## Lógica dos fluxos
+A rotina atual:
 
-### Fluxo principal de uso
+1. Seleciona processos não arquivados.
+2. Ignora processos sem tribunal_alias.
+3. Consulta o DataJud pelo número CNJ.
+4. Converte e valida as datas recebidas.
+5. Verifica se cada movimentação já existe usando processo, data, descrição e origem.
+6. Insere somente movimentações novas.
+7. Marca alerta_pendente quando há novidade.
 
-1. O advogado acessa o sistema (login)
-2. Visualiza o painel com todos os clientes e processos cadastrados
-3. Cadastra um novo processo, vinculando-o a um cliente e informando o número CNJ
-4. O sistema passa a monitorar esse processo automaticamente
-5. Quando uma movimentação nova é detectada, um alerta aparece no painel
+Execução manual:
 
-### Lógica da verificação automática (DataJud)
+    python manage.py verificar_movimentacoes
 
-1. Uma rotina periódica (job agendado) percorre todos os processos ativos cadastrados no sistema
-2. Para cada processo, o sistema consulta a API pública do DataJud usando o número CNJ
-3. A resposta traz a lista de movimentações daquele processo
-4. O sistema compara a movimentação mais recente retornada com a última movimentação já registrada no banco local
-5. Se houver diferença, uma nova entrada é criada na linha do tempo do processo e o status do processo passa a exibir "alerta pendente" até que o advogado visualize
-6. Processos arquivados ou encerrados são excluídos da rotina de verificação, para economizar chamadas à API
+O agendamento automático será implementado posteriormente.
 
-### Limitações conhecidas
+## Segurança
 
-- O DataJud não indexa nome de partes nem número de OAB — a busca de processos precisa ser feita pelo número CNJ, já conhecido e cadastrado manualmente
-- A API não fornece prazos processuais, apenas movimentações — o controle de prazos continua dependendo de registro manual pelo advogado
-- Dados de processos em segredo de justiça não são retornados pela API pública
+O sistema lida com dados pessoais e, por isso, a segurança faz parte do desenvolvimento.
 
----
+- DJANGO_SECRET_KEY é obrigatória e não fica no código.
+- DATAJUD_API_KEY é obtida por variável de ambiente.
+- .env não deve ser versionado.
+- .env.example não contém credenciais.
+- CSRF permanece habilitado pelo middleware do Django.
+- Senhas serão tratadas pelo sistema de autenticação do Django.
+- O ORM é usado para evitar SQL manual inseguro.
+- Cookies seguros podem ser ativados para produção.
+- HTTPS deve ser utilizado em produção.
+- Backups, logs/auditoria e política de retenção ainda precisam ser implementados.
 
-## Métodos de proteção e segurança
+## Estrutura de dados
 
-Como o sistema armazena dados pessoais de clientes (nome, CPF, contato), ele deve seguir boas práticas de segurança e os princípios da LGPD (Lei Geral de Proteção de Dados).
+    Cliente
+      |
+      +-- Processo
+            |
+            +-- Movimentacao
 
-### Autenticação e acesso
+### Cliente
 
-- Login obrigatório para acessar qualquer parte do sistema (sem exceções)
-- Senhas armazenadas com hash (mecanismo padrão do Django — nunca em texto puro)
-- Sessão com expiração automática por inatividade
-- Isolamento de dados por usuário, caso o sistema venha a suportar mais de um advogado no futuro
+Dados cadastrais da pessoa ou empresa atendida.
 
-### Proteção de dados
+### Processo
 
-- Nenhuma credencial (chave de API, senha de banco de dados) fica escrita diretamente no código — tudo fica em variáveis de ambiente, fora do controle de versão
-- Proteção contra CSRF em todos os formulários (recurso nativo do Django)
-- Proteção contra SQL Injection via uso do ORM do Django (nenhuma query SQL manual concatenada)
-- Backups periódicos do banco de dados, já que ele contém informações sensíveis de clientes
+Processo judicial vinculado a um cliente, contendo número CNJ, área, tribunal, fase e status.
 
-### Boas práticas gerais
+### Movimentacao
 
-- Em produção, o sistema deve rodar exclusivamente sob HTTPS
-- Princípio do mínimo privilégio: cada usuário só acessa os dados que precisa
-- Logs de acesso e alteração, para rastrear quem viu ou modificou um processo (auditoria básica)
+Evento processual associado a um processo, contendo data, descrição e origem.
 
----
+## Limitações conhecidas
 
-## Estrutura de dados (visão geral)
+- A consulta depende do número CNJ e do alias correto do tribunal.
+- A disponibilidade de dados depende da API pública do DataJud.
+- O sistema ainda não controla prazos processuais.
+- A interface própria ainda está em desenvolvimento.
+- A verificação ainda precisa ser ligada a um agendador para execução automática.
 
-- **Cliente** — dados cadastrais da pessoa/empresa atendida
-- **Processo** — vinculado a um Cliente; guarda número CNJ, área, tribunal, fase e status
-- **Movimentação** — vinculada a um Processo; guarda data, descrição e origem (DataJud)
+## Desenvolvimento
+
+Crie um ambiente virtual:
+
+    python -m venv .venv
+
+Instale as dependências:
+
+    pip install -r requirements.txt
+
+Copie .env.example para .env e preencha pelo menos DJANGO_SECRET_KEY e DATAJUD_API_KEY.
+
+Depois:
+
+    python manage.py migrate
+    python manage.py runserver
+
+Para criar um usuário administrativo:
+
+    python manage.py createsuperuser
