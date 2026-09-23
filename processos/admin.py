@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Cliente, Processo, Movimentacao
+
+from .models import Cliente, Movimentacao, Prazo, Processo
 
 
 class MovimentacaoInline(admin.TabularInline):
@@ -28,3 +29,11 @@ class MovimentacaoAdmin(admin.ModelAdmin):
     list_display = ("processo", "data", "origem")
     list_filter = ("origem",)
     ordering = ("-data",)
+
+
+@admin.register(Prazo)
+class PrazoAdmin(admin.ModelAdmin):
+    list_display = ("titulo", "processo", "data_vencimento", "status")
+    list_filter = ("status",)
+    search_fields = ("titulo", "processo__numero_cnj", "processo__cliente__nome")
+    date_hierarchy = "data_vencimento"
