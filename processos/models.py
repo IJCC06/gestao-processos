@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Cliente(models.Model):
@@ -63,3 +64,37 @@ class Movimentacao(models.Model):
 
     def __str__(self):
         return f"{self.processo.numero_cnj} — {self.data:%d/%m/%Y}"
+
+
+class Prazo(models.Model):
+    class Status(models.TextChoices):
+        PENDENTE = "pendente", "Pendente"
+        CONCLUIDO = "concluido", "Concluído"
+        CANCELADO = "cancelado", "Cancelado"
+
+    processo = models.ForeignKey(
+        Processo,
+        on_delete=models.PROTECT,
+        related_name="prazos",
+    )
+    titulo = models.CharField(max_length=200)
+    data_inicio = models.DateField(null=True, blank=True)
+    data_vencimento = models.DateField()
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDENTE,
+    )
+    observacoes = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["data_vencimento", "titulo"]
+
+    def __str__(self):
+        return f"{self.titulo} — {self.processo.numero_cnj}"
+
+    @property
+    def dias_restantes(self):
+        return (self.data_vencimento - timezone.localdate()).days
