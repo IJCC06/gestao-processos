@@ -1,8 +1,94 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Notificações</title>
-<style>body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:20px}.secao{margin:30px 0}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd}.vencido{font-weight:bold}.aviso{font-weight:bold}.mensagem{padding:10px;border:1px solid #ddd;margin:8px 0}</style></head>
-<body><a href="{% url 'dashboard' %}">← Painel</a><h1>Notificações</h1>
-<div class="secao"><h2>Prazos vencidos</h2>{% if vencidos %}<table><thead><tr><th>Vencimento</th><th>Prazo</th><th>Processo</th><th>Cliente</th></tr></thead><tbody>{% for prazo in vencidos %}<tr class="vencido"><td>{{ prazo.data_vencimento|date:"d/m/Y" }}</td><td><a href="{% url 'prazo_detail' prazo.pk %}">{{ prazo.titulo }}</a></td><td><a href="{% url 'processo_detail' prazo.processo.pk %}">{{ prazo.processo.numero_cnj }}</a></td><td>{{ prazo.processo.cliente.nome }}</td></tr>{% endfor %}</tbody></table>{% else %}<p>Nenhum prazo vencido.</p>{% endif %}</div>
-<div class="secao"><h2>Próximos 7 dias</h2>{% if prazos_proximos %}<table><thead><tr><th>Vencimento</th><th>Prazo</th><th>Processo</th><th>Cliente</th><th>Dias</th></tr></thead><tbody>{% for prazo in prazos_proximos %}<tr class="aviso"><td>{{ prazo.data_vencimento|date:"d/m/Y" }}</td><td><a href="{% url 'prazo_detail' prazo.pk %}">{{ prazo.titulo }}</a></td><td>{{ prazo.processo.numero_cnj }}</td><td>{{ prazo.processo.cliente.nome }}</td><td>{{ prazo.dias_restantes }}</td></tr>{% endfor %}</tbody></table>{% else %}<p>Nenhum prazo vence nos próximos 7 dias.</p>{% endif %}</div>
-<div class="secao"><h2>Novas movimentações</h2>{% if movimentos %}{% for movimentacao in movimentos %}<div class="mensagem"><strong>{{ movimentacao.processo.numero_cnj }}</strong> — {{ movimentacao.processo.cliente.nome }}<br>{{ movimentacao.data|date:"d/m/Y H:i" }} — {{ movimentacao.descricao }}</div>{% endfor %}{% else %}<p>Nenhuma nova movimentação pendente.</p>{% endif %}</div>
-</body></html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notificações | Gestão</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:20px;color:#222}
+header{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.secao{margin:30px 0}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #ddd;vertical-align:top}
+.vencido{font-weight:bold}
+.aviso{font-weight:bold}
+.mensagem{padding:12px;border:1px solid #ddd;margin:8px 0;border-radius:5px}
+.acao{margin-top:8px}
+.botao{padding:7px 10px;border:1px solid #999;border-radius:5px;background:#f5f5f5;cursor:pointer}
+.vazio{color:#666}
+</style>
+</head>
+<body>
+<header>
+<div>
+<a href="{% url 'dashboard' %}">← Painel</a>
+<h1>Notificações</h1>
+</div>
+<a href="{% url 'processo_list' %}">Processos</a>
+</header>
+
+<section class="secao">
+<h2>Prazos vencidos</h2>
+{% if vencidos %}
+<table>
+<thead><tr><th>Vencimento</th><th>Prazo</th><th>Processo</th><th>Cliente</th></tr></thead>
+<tbody>
+{% for prazo in vencidos %}
+<tr class="vencido">
+<td>{{ prazo.data_vencimento|date:"d/m/Y" }}</td>
+<td><a href="{% url 'prazo_detail' prazo.pk %}">{{ prazo.titulo }}</a></td>
+<td><a href="{% url 'processo_detail' prazo.processo.pk %}">{{ prazo.processo.numero_cnj }}</a></td>
+<td>{{ prazo.processo.cliente.nome }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="vazio">Nenhum prazo vencido.</p>
+{% endif %}
+</section>
+
+<section class="secao">
+<h2>Próximos 7 dias</h2>
+{% if prazos_proximos %}
+<table>
+<thead><tr><th>Vencimento</th><th>Prazo</th><th>Processo</th><th>Cliente</th><th>Dias</th></tr></thead>
+<tbody>
+{% for prazo in prazos_proximos %}
+<tr class="aviso">
+<td>{{ prazo.data_vencimento|date:"d/m/Y" }}</td>
+<td><a href="{% url 'prazo_detail' prazo.pk %}">{{ prazo.titulo }}</a></td>
+<td><a href="{% url 'processo_detail' prazo.processo.pk %}">{{ prazo.processo.numero_cnj }}</a></td>
+<td>{{ prazo.processo.cliente.nome }}</td>
+<td>{{ prazo.dias_restantes }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="vazio">Nenhum prazo vence nos próximos 7 dias.</p>
+{% endif %}
+</section>
+
+<section class="secao">
+<h2>Novas movimentações</h2>
+{% if movimentos %}
+{% for movimentacao in movimentos %}
+<div class="mensagem">
+<strong><a href="{% url 'processo_detail' movimentacao.processo.pk %}">{{ movimentacao.processo.numero_cnj }}</a></strong>
+— {{ movimentacao.processo.cliente.nome }}<br>
+{{ movimentacao.data|date:"d/m/Y H:i" }} — {{ movimentacao.descricao }}
+<div class="acao">
+<form method="post" action="{% url 'limpar_alerta_processo' movimentacao.processo.pk %}">
+{% csrf_token %}
+<button class="botao" type="submit">Marcar como visto</button>
+</form>
+</div>
+</div>
+{% endfor %}
+{% else %}
+<p class="vazio">Nenhuma nova movimentação pendente.</p>
+{% endif %}
+</section>
+</body>
+</html>
