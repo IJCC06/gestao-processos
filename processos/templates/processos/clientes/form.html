@@ -1,12 +1,1 @@
-<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ titulo }}</title>
-<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px}form{display:grid;gap:12px}input,textarea{padding:10px;font-size:1rem}button,a{padding:9px 12px} .erro{color:#a00}</style></head>
-<body><a href="{% if cliente %}{% url 'cliente_detail' cliente.pk %}{% else %}{% url 'cliente_list' %}{% endif %}">← Voltar</a>
-<h1>{{ titulo }}</h1>
-<form method="post">{% csrf_token %}
-{{ form.non_field_errors }}
-{% for field in form %}
-<div><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="erro">{{ error }}</div>{% endfor %}</div>
-{% endfor %}
-<button type="submit">Salvar</button></form>
-</body></html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>{{ titulo }}</title></head><body><a href="{{ url_for('cliente_detail',pk=cliente.id) if cliente else url_for('cliente_list') }}">← Voltar</a><h1>{{ titulo }}</h1>{% with messages=get_flashed_messages() %}{% for message in messages %}<p>{{ message }}</p>{% endfor %}{% endwith %}<form method="post">{{ csrf_token() }}<p>Nome<br><input name="nome" value="{{ cliente.nome if cliente else '' }}" required></p><p>CPF/CNPJ<br><input name="cpf_cnpj" value="{{ cliente.cpf_cnpj if cliente else '' }}" required></p><p>Contato<br><input name="contato" value="{{ cliente.contato if cliente else '' }}"></p><p>Endereço<br><input name="endereco" value="{{ cliente.endereco if cliente else '' }}"></p><p>Observações<br><textarea name="observacoes">{{ cliente.observacoes if cliente else '' }}</textarea></p><button>Salvar</button></form></body></html>
