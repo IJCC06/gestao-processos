@@ -14,17 +14,29 @@ from .models import Cliente, Movimentacao, Prazo, Processo
 @login_required
 def dashboard(request):
     hoje = timezone.localdate()
-    prazos_proximos = Prazo.objects.filter(
+
+    prazos = Prazo.objects.filter(
         status=Prazo.Status.PENDENTE,
-        data_vencimento__lte=hoje + timedelta(days=7),
     ).select_related("processo", "processo__cliente")
+
+    prazos_vencidos = prazos.filter(
+        data_vencimento__lt=hoje,
+    )
+    prazos_proximos = prazos.filter(
+        data_vencimento__gte=hoje,
+        data_vencimento__lte=hoje + timedelta(days=7),
+    )
+
     context = {
         "total_clientes": Cliente.objects.count(),
         "total_processos": Processo.objects.count(),
         "processos_ativos": Processo.objects.filter(status=Processo.Status.ATIVO).count(),
         "alertas_pendentes": Processo.objects.filter(alerta_pendente=True).count(),
+        "prazos_vencidos": prazos_vencidos,
         "prazos_proximos": prazos_proximos,
-        "ultimas_movimentacoes": Movimentacao.objects.select_related("processo", "processo__cliente")[:10],
+        "ultimas_movimentacoes": Movimentacao.objects.select_related(
+            "processo", "processo__cliente"
+        )[:10],
     }
     return render(request, "processos/dashboard.html", context)
 
