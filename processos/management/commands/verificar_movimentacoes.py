@@ -1,14 +1,14 @@
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from django.utils.timezone import make_aware, is_naive
+from django.utils.timezone import is_naive, make_aware
 
-from processos.models import Processo, Movimentacao
-from processos.services.datajud import consultar_movimentacoes, DataJudError
+from processos.models import Movimentacao, Processo
+from processos.services.datajud import DataJudError, consultar_movimentacoes
 
 
 class Command(BaseCommand):
-    help = "Consulta o DataJud para cada processo ativo e registra movimentações novas."
+    help = "Consulta o DataJud e registra movimentações novas."
 
     def handle(self, *args, **options):
         processos = Processo.objects.exclude(status=Processo.Status.ARQUIVADO)
@@ -25,30 +25,50 @@ class Command(BaseCommand):
                 continue
 
             try:
-                movimentos = consultar_movimentacoes(processo.numero_cnj, processo.tribunal_alias)
+                movimentos = consultar_movimentacoes(
+                    processo.numero_cnj, processo.tribunal_alias
+                )
             except DataJudError as exc:
-                self.stdout.write(self.style.ERROR(f"[{processo.numero_cnj}] {exc}"))
+                self.stdout.write(
+                    self.style.ERROR(f"[{processo.numero_cnj}] {exc}")
+                )
                 continue
-
-            ultima_registrada = processo.movimentacoes.order_by("-data").first()
-            ultima_data = ultima_registrada.data if ultima_registrada else None
 
             novas = 0
             for mov in movimentos:
                 data_hora_str = mov.get("dataHora")
                 if not data_hora_str:
                     continue
-                data_hora = datetime.fromisoformat(data_hora_str.replace("Z", "+00:00"))
+
+                try:
+                    data_hora = datetime.fromisoformat(
+                        data_hora_str.replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"[{processo.numero_cnj}] movimentação com data inválida — pulando"
+                        )
+                    )
+                    continue
+
                 if is_naive(data_hora):
                     data_hora = make_aware(data_hora)
 
-                if ultima_data and data_hora <= ultima_data:
+                descricao = mov.get("nome") or "Movimentação sem descrição"
+
+                if Movimentacao.objects.filter(
+                    processo=processo,
+                    data=data_hora,
+                    descricao=descricao,
+                    origem="datajud",
+                ).exists():
                     continue
 
                 Movimentacao.objects.create(
                     processo=processo,
                     data=data_hora,
-                    descricao=mov.get("nome", "Movimentação sem descrição"),
+                    descricao=descricao,
                     origem="datajud",
                 )
                 novas += 1
@@ -58,7 +78,9 @@ class Command(BaseCommand):
                 processo.save(update_fields=["alerta_pendente"])
                 total_novas += novas
                 self.stdout.write(
-                    self.style.SUCCESS(f"[{processo.numero_cnj}] {novas} movimentação(ões) nova(s)")
+                    self.style.SUCCESS(
+                        f"[{processo.numero_cnj}] {novas} movimentação(ões) nova(s)"
+                    )
                 )
 
         self.stdout.write(
