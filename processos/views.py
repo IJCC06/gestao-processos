@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ClienteForm
@@ -100,7 +101,7 @@ def cliente_delete(request, pk):
     if request.method == "POST":
         try:
             cliente.delete()
-        except Exception:
+        except ProtectedError:
             messages.error(
                 request,
                 "Não foi possível excluir este cliente. "
