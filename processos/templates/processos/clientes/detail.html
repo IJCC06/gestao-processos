@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ cliente.nome }}</title>
+<style>body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;padding:20px}.acoes{display:flex;gap:10px;margin:20px 0}.campo{margin:12px 0}.rotulo{font-weight:bold}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #ddd}.mensagem{padding:10px;border:1px solid #ddd}</style></head>
+<body><a href="{% url 'cliente_list' %}">← Clientes</a>
+<h1>{{ cliente.nome }}</h1>
+{% if messages %}{% for message in messages %}<div class="mensagem">{{ message }}</div>{% endfor %}{% endif %}
+<div class="acoes"><a href="{% url 'cliente_update' cliente.pk %}">Editar</a><a href="{% url 'cliente_delete' cliente.pk %}">Excluir</a></div>
+<div class="campo"><span class="rotulo">CPF/CNPJ:</span> {{ cliente.cpf_cnpj }}</div>
+<div class="campo"><span class="rotulo">Contato:</span> {{ cliente.contato|default:"—" }}</div>
+<div class="campo"><span class="rotulo">Endereço:</span> {{ cliente.endereco|default:"—" }}</div>
+<div class="campo"><span class="rotulo">Observações:</span> {{ cliente.observacoes|default:"—" }}</div>
+<h2>Processos</h2>
+{% if cliente.processos.all %}<table><thead><tr><th>Número CNJ</th><th>Área</th><th>Status</th></tr></thead><tbody>
+{% for processo in cliente.processos.all %}<tr><td>{{ processo.numero_cnj }}</td><td>{{ processo.get_area_display }}</td><td>{{ processo.get_status_display }}</td></tr>{% endfor %}
+</tbody></table>{% else %}<p>Este cliente ainda não possui processos.</p>{% endif %}
+</body></html>
