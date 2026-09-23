@@ -25,6 +25,7 @@ class FluxosPrincipaisTests(TestCase):
             numero_cnj="0000000-00.2026.8.00.0000",
             area=Processo.Area.CIVEL,
             tribunal="Tribunal de Teste",
+            tribunal_alias="tst",
         )
 
     def login(self):
