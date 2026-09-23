@@ -228,3 +228,13 @@ def notificacoes(request):
     proximos = prazos.filter(data_vencimento__gte=hoje, data_vencimento__lte=hoje + timedelta(days=7))
     movimentos = Movimentacao.objects.filter(processo__alerta_pendente=True).select_related("processo", "processo__cliente")
     return render(request, "processos/notificacoes.html", {"vencidos": vencidos, "prazos_proximos": proximos, "movimentos": movimentos})
+
+
+@login_required
+def limpar_alerta_processo(request, pk):
+    processo = get_object_or_404(Processo, pk=pk)
+    if request.method == "POST":
+        processo.alerta_pendente = False
+        processo.save(update_fields=["alerta_pendente"])
+        messages.success(request, "Alerta de movimentação marcado como visto.")
+    return redirect("notificacoes")
