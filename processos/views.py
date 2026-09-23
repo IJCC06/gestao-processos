@@ -164,15 +164,30 @@ def prazo_list(request):
 
 @login_required
 def prazo_create(request):
+    processo_id = request.GET.get("processo")
+    processo = None
+
+    if processo_id:
+        processo = get_object_or_404(Processo, pk=processo_id)
+
     if request.method == "POST":
         form = PrazoForm(request.POST)
+        if processo and not request.POST.get("processo"):
+            form.data = form.data.copy()
+            form.data["processo"] = processo.pk
+
         if form.is_valid():
             prazo = form.save()
             messages.success(request, "Prazo cadastrado com sucesso.")
-            return redirect("prazo_list")
+            return redirect("prazo_detail", pk=prazo.pk)
     else:
-        form = PrazoForm()
-    return render(request, "processos/prazos/form.html", {"form": form, "titulo": "Novo prazo"})
+        form = PrazoForm(initial={"processo": processo} if processo else None)
+
+    return render(
+        request,
+        "processos/prazos/form.html",
+        {"form": form, "titulo": "Novo prazo", "processo": processo},
+    )
 
 
 @login_required
