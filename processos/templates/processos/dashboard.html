@@ -36,6 +36,8 @@
         <div class="card"><div>Alertas pendentes</div><div class="numero">{{ alertas_pendentes }}</div></div>
     </section>
 
+    <p><a href="{% url 'cliente_list' %}">Gerenciar clientes</a></p>
+
     <h2>Últimas movimentações</h2>
     {% if ultimas_movimentacoes %}
         <table>
