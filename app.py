@@ -23,6 +23,8 @@ csrf = CSRFProtect()
 def create_app():
     app = Flask(__name__, template_folder="processos/templates", static_folder="processos/static")
     app.config.from_object(Config)
+    if os.environ.get("DATABASE_URL"):
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
