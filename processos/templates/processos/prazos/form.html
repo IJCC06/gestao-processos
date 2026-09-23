@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ titulo }}</title>
+<style>body{font-family:Arial,sans-serif;max-width:800px;margin:40px auto;padding:20px}label{display:block;margin-top:14px}input,select,textarea{width:100%;padding:8px;box-sizing:border-box}button{margin-top:20px}</style></head>
+<body><a href="{% url 'prazo_list' %}">← Prazos</a><h1>{{ titulo }}</h1>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Salvar</button></form>
+</body></html>
