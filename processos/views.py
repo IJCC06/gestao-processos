@@ -89,12 +89,33 @@ def cliente_delete(request, pk):
 def processo_list(request):
     busca = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
+    area = request.GET.get("area", "").strip()
+
     processos = Processo.objects.select_related("cliente")
+
     if busca:
-        processos = processos.filter(Q(numero_cnj__icontains=busca) | Q(cliente__nome__icontains=busca) | Q(tribunal__icontains=busca))
+        processos = processos.filter(
+            Q(numero_cnj__icontains=busca)
+            | Q(cliente__nome__icontains=busca)
+            | Q(tribunal__icontains=busca)
+        )
     if status in dict(Processo.Status.choices):
         processos = processos.filter(status=status)
-    return render(request, "processos/processos/list.html", {"processos": processos, "busca": busca, "status": status, "status_choices": Processo.Status.choices})
+    if area in dict(Processo.Area.choices):
+        processos = processos.filter(area=area)
+
+    return render(
+        request,
+        "processos/processos/list.html",
+        {
+            "processos": processos,
+            "busca": busca,
+            "status": status,
+            "area": area,
+            "status_choices": Processo.Status.choices,
+            "area_choices": Processo.Area.choices,
+        },
+    )
 
 
 @login_required
