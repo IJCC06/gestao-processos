@@ -1,8 +1,1 @@
-<!DOCTYPE html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Excluir cliente</title></head>
-<body style="font-family:Arial,sans-serif;max-width:650px;margin:60px auto;padding:20px">
-<a href="{% url 'cliente_detail' cliente.pk %}">← Voltar</a><h1>Excluir cliente</h1>
-<p>Você tem certeza que deseja excluir <strong>{{ cliente.nome }}</strong>?</p>
-<p>Se houver processos vinculados, o Django impedirá a exclusão para preservar os dados.</p>
-<form method="post">{% csrf_token %}<button type="submit">Confirmar exclusão</button><a href="{% url 'cliente_detail' cliente.pk %}">Cancelar</a></form>
-</body></html>
+<html><body><a href="{{ url_for('cliente_detail',pk=cliente.id) }}">Voltar</a><h1>Excluir cliente</h1><p>Confirma a exclusão de <b>{{ cliente.nome }}</b>?</p><form method="post">{{ csrf_token() }}<button type="submit">Confirmar</button></form></body></html>
