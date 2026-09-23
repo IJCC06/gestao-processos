@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -14,19 +16,15 @@ def dashboard(request):
     hoje = timezone.localdate()
     prazos_proximos = Prazo.objects.filter(
         status=Prazo.Status.PENDENTE,
-        data_vencimento__lte=hoje + timezone.timedelta(days=7),
+        data_vencimento__lte=hoje + timedelta(days=7),
     ).select_related("processo", "processo__cliente")
     context = {
         "total_clientes": Cliente.objects.count(),
         "total_processos": Processo.objects.count(),
-        "processos_ativos": Processo.objects.filter(
-            status=Processo.Status.ATIVO
-        ).count(),
+        "processos_ativos": Processo.objects.filter(status=Processo.Status.ATIVO).count(),
         "alertas_pendentes": Processo.objects.filter(alerta_pendente=True).count(),
         "prazos_proximos": prazos_proximos,
-        "ultimas_movimentacoes": Movimentacao.objects.select_related(
-            "processo", "processo__cliente"
-        )[:10],
+        "ultimas_movimentacoes": Movimentacao.objects.select_related("processo", "processo__cliente")[:10],
     }
     return render(request, "processos/dashboard.html", context)
 
@@ -35,19 +33,9 @@ def dashboard(request):
 def cliente_list(request):
     busca = request.GET.get("q", "").strip()
     clientes = Cliente.objects.all()
-
     if busca:
-        clientes = clientes.filter(
-            Q(nome__icontains=busca)
-            | Q(cpf_cnpj__icontains=busca)
-            | Q(contato__icontains=busca)
-        )
-
-    return render(
-        request,
-        "processos/clientes/list.html",
-        {"clientes": clientes, "busca": busca},
-    )
+        clientes = clientes.filter(Q(nome__icontains=busca) | Q(cpf_cnpj__icontains=busca) | Q(contato__icontains=busca))
+    return render(request, "processos/clientes/list.html", {"clientes": clientes, "busca": busca})
 
 
 @login_required
@@ -60,31 +48,18 @@ def cliente_create(request):
             return redirect("cliente_detail", pk=cliente.pk)
     else:
         form = ClienteForm()
-
-    return render(
-        request,
-        "processos/clientes/form.html",
-        {"form": form, "titulo": "Novo cliente"},
-    )
+    return render(request, "processos/clientes/form.html", {"form": form, "titulo": "Novo cliente"})
 
 
 @login_required
 def cliente_detail(request, pk):
-    cliente = get_object_or_404(
-        Cliente.objects.prefetch_related("processos"),
-        pk=pk,
-    )
-    return render(
-        request,
-        "processos/clientes/detail.html",
-        {"cliente": cliente},
-    )
+    cliente = get_object_or_404(Cliente.objects.prefetch_related("processos"), pk=pk)
+    return render(request, "processos/clientes/detail.html", {"cliente": cliente})
 
 
 @login_required
 def cliente_update(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
-
     if request.method == "POST":
         form = ClienteForm(request.POST, instance=cliente)
         if form.is_valid():
@@ -93,37 +68,21 @@ def cliente_update(request, pk):
             return redirect("cliente_detail", pk=cliente.pk)
     else:
         form = ClienteForm(instance=cliente)
-
-    return render(
-        request,
-        "processos/clientes/form.html",
-        {"form": form, "titulo": "Editar cliente", "cliente": cliente},
-    )
+    return render(request, "processos/clientes/form.html", {"form": form, "titulo": "Editar cliente", "cliente": cliente})
 
 
 @login_required
 def cliente_delete(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
-
     if request.method == "POST":
         try:
             cliente.delete()
         except ProtectedError:
-            messages.error(
-                request,
-                "Não foi possível excluir este cliente. "
-                "Verifique se ele possui processos vinculados.",
-            )
+            messages.error(request, "Não foi possível excluir este cliente. Verifique se ele possui processos vinculados.")
             return redirect("cliente_detail", pk=cliente.pk)
-
         messages.success(request, "Cliente excluído com sucesso.")
         return redirect("cliente_list")
-
-    return render(
-        request,
-        "processos/clientes/delete.html",
-        {"cliente": cliente},
-    )
+    return render(request, "processos/clientes/delete.html", {"cliente": cliente})
 
 
 @login_required
@@ -132,19 +91,10 @@ def processo_list(request):
     status = request.GET.get("status", "").strip()
     processos = Processo.objects.select_related("cliente")
     if busca:
-        processos = processos.filter(
-            Q(numero_cnj__icontains=busca)
-            | Q(cliente__nome__icontains=busca)
-            | Q(tribunal__icontains=busca)
-        )
+        processos = processos.filter(Q(numero_cnj__icontains=busca) | Q(cliente__nome__icontains=busca) | Q(tribunal__icontains=busca))
     if status in dict(Processo.Status.choices):
         processos = processos.filter(status=status)
-    return render(request, "processos/processos/list.html", {
-        "processos": processos,
-        "busca": busca,
-        "status": status,
-        "status_choices": Processo.Status.choices,
-    })
+    return render(request, "processos/processos/list.html", {"processos": processos, "busca": busca, "status": status, "status_choices": Processo.Status.choices})
 
 
 @login_required
@@ -157,19 +107,13 @@ def processo_create(request):
             return redirect("processo_detail", pk=processo.pk)
     else:
         form = ProcessoForm()
-    return render(request, "processos/processos/form.html", {
-        "form": form,
-        "titulo": "Novo processo",
-    })
+    return render(request, "processos/processos/form.html", {"form": form, "titulo": "Novo processo"})
 
 
 @login_required
 def processo_detail(request, pk):
     processo = get_object_or_404(
-        Processo.objects.select_related("cliente").prefetch_related(
-            "movimentacoes", "prazos"
-        ),
-        pk=pk,
+        Processo.objects.select_related("cliente").prefetch_related("movimentacoes", "prazos"), pk=pk
     )
     return render(request, "processos/processos/detail.html", {"processo": processo})
 
@@ -185,11 +129,7 @@ def processo_update(request, pk):
             return redirect("processo_detail", pk=processo.pk)
     else:
         form = ProcessoForm(instance=processo)
-    return render(request, "processos/processos/form.html", {
-        "form": form,
-        "titulo": "Editar processo",
-        "processo": processo,
-    })
+    return render(request, "processos/processos/form.html", {"form": form, "titulo": "Editar processo", "processo": processo})
 
 
 @login_required
@@ -198,11 +138,7 @@ def prazo_list(request):
     prazos = Prazo.objects.select_related("processo", "processo__cliente")
     if status in dict(Prazo.Status.choices):
         prazos = prazos.filter(status=status)
-    return render(request, "processos/prazos/list.html", {
-        "prazos": prazos,
-        "status": status,
-        "status_choices": Prazo.Status.choices,
-    })
+    return render(request, "processos/prazos/list.html", {"prazos": prazos, "status": status, "status_choices": Prazo.Status.choices})
 
 
 @login_required
@@ -215,17 +151,12 @@ def prazo_create(request):
             return redirect("prazo_list")
     else:
         form = PrazoForm()
-    return render(request, "processos/prazos/form.html", {
-        "form": form,
-        "titulo": "Novo prazo",
-    })
+    return render(request, "processos/prazos/form.html", {"form": form, "titulo": "Novo prazo"})
 
 
 @login_required
 def prazo_detail(request, pk):
-    prazo = get_object_or_404(
-        Prazo.objects.select_related("processo", "processo__cliente"), pk=pk
-    )
+    prazo = get_object_or_404(Prazo.objects.select_related("processo", "processo__cliente"), pk=pk)
     return render(request, "processos/prazos/detail.html", {"prazo": prazo})
 
 
@@ -240,11 +171,7 @@ def prazo_update(request, pk):
             return redirect("prazo_detail", pk=prazo.pk)
     else:
         form = PrazoForm(instance=prazo)
-    return render(request, "processos/prazos/form.html", {
-        "form": form,
-        "titulo": "Editar prazo",
-        "prazo": prazo,
-    })
+    return render(request, "processos/prazos/form.html", {"form": form, "titulo": "Editar prazo", "prazo": prazo})
 
 
 @login_required
@@ -260,19 +187,8 @@ def prazo_concluir(request, pk):
 @login_required
 def notificacoes(request):
     hoje = timezone.localdate()
-    prazos = Prazo.objects.filter(
-        status=Prazo.Status.PENDENTE
-    ).select_related("processo", "processo__cliente")
+    prazos = Prazo.objects.filter(status=Prazo.Status.PENDENTE).select_related("processo", "processo__cliente")
     vencidos = prazos.filter(data_vencimento__lt=hoje)
-    proximos = prazos.filter(
-        data_vencimento__gte=hoje,
-        data_vencimento__lte=hoje + timezone.timedelta(days=7),
-    )
-    movimentos = Movimentacao.objects.filter(
-        processo__alerta_pendente=True
-    ).select_related("processo", "processo__cliente")
-    return render(request, "processos/notificacoes.html", {
-        "vencidos": vencidos,
-        "prazos_proximos": proximos,
-        "movimentos": movimentos,
-    })
+    proximos = prazos.filter(data_vencimento__gte=hoje, data_vencimento__lte=hoje + timedelta(days=7))
+    movimentos = Movimentacao.objects.filter(processo__alerta_pendente=True).select_related("processo", "processo__cliente")
+    return render(request, "processos/notificacoes.html", {"vencidos": vencidos, "prazos_proximos": proximos, "movimentos": movimentos})
