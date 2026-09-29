@@ -114,6 +114,67 @@ class FluxosPrincipaisTests(unittest.TestCase):
         with self.app.app_context():
             self.assertIsNone(Usuario.query.filter_by(username="novo-usuario").first())
 
+    def _get_cliente(self):
+        return db.session.get(Cliente, self.cliente_id)
+
+    def _get_processo(self):
+        return db.session.get(Processo, self.processo_id)
+
+    def test_paginacao_das_listagens_preserva_filtros(self):
+        with self.app.app_context():
+            clientes = [
+                Cliente(nome=f"Cliente {i:02d}", cpf_cnpj=f"529982247{i:02d}")
+                for i in range(20)
+            ]
+            db.session.add_all(clientes)
+
+            processos = [
+                Processo(
+                    cliente=self._get_cliente(),
+                    numero_cnj=f"{i:07d}-49.2026.8.00.{i:04d}",
+                    area=Processo.Area.CIVEL,
+                    tribunal="Tribunal de Teste",
+                    tribunal_alias="tst",
+                )
+                for i in range(20)
+            ]
+            db.session.add_all(processos)
+
+            prazos = [
+                Prazo(
+                    processo=self._get_processo(),
+                    titulo=f"Prazo {i:02d}",
+                    data_vencimento=date(2026, 10, 1) + timedelta(days=i),
+                    status=Prazo.Status.PENDENTE,
+                )
+                for i in range(20)
+            ]
+            db.session.add_all(prazos)
+            db.session.commit()
+
+        self.login()
+
+        resposta = self.client.get("/clientes/?page=2")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Cliente 19", resposta.data)
+        self.assertNotIn(b"Cliente 00", resposta.data)
+
+        resposta = self.client.get(
+            "/processos/",
+            query_string={"q": "Tribunal de Teste", "page": 2},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"processo(s) encontrado(s)", resposta.data)
+        self.assertIn(b"Tribunal de Teste", resposta.data)
+
+        resposta = self.client.get(
+            "/prazos/",
+            query_string={"status": Prazo.Status.PENDENTE, "page": 2},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Prazo 19", resposta.data)
+        self.assertNotIn(b"Prazo 00", resposta.data)
+
     def test_criacao_de_cliente(self):
         self.login()
         resposta = self.client.post(
