@@ -4,7 +4,8 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from processos.extensions import db
-from processos.models import Usuario\nfrom processos.services.auditoria import registrar_auditoria
+from processos.models import Usuario
+from processos.services.auditoria import registrar_auditoria
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -44,6 +45,8 @@ def login():
                 flash("Esta conta está desativada. Procure um administrador.", "error")
             else:
                 login_user(usuario)
+                registrar_auditoria("LOGIN", "Usuario", usuario.id, "Login realizado.")
+                db.session.commit()
                 next_url = _safe_next_url(request.args.get("next"))
                 return redirect(next_url or url_for("dashboard.index"))
 
@@ -80,6 +83,8 @@ def cadastro():
             usuario.set_password(password)
             db.session.add(usuario)
             db.session.commit()
+            registrar_auditoria("CRIAR", "Usuario", usuario.id, f"Cadastro público de usuário: {usuario.username}.")
+            db.session.commit()
             flash("Cadastro realizado com sucesso. Agora entre com sua conta.", "success")
             return redirect(url_for("auth.login"))
 
@@ -92,5 +97,7 @@ def cadastro():
 @auth_bp.post("/logout/")
 @login_required
 def logout():
+    registrar_auditoria("LOGOUT", "Usuario", current_user.id, "Logout realizado.")
+    db.session.commit()
     logout_user()
     return redirect(url_for("auth.login"))
