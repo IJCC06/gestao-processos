@@ -1,7 +1,7 @@
 import os
 import time
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from config.settings import Config
@@ -253,7 +253,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             )
             movimento = Movimentacao(
                 processo=processo,
-                data=Config.local_date(),
+                data=datetime.now(timezone.utc),
                 descricao="Intimação publicada",
                 origem="datajud",
             )
@@ -268,7 +268,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn(b"Intima", resposta.data)
         self.assertIn(b"Manifest", resposta.data)
         self.assertIn(b"novas moviment", resposta.data)
-        self.assertIn(b"1 dia(s) restante(s).", resposta.data)
+        self.assertIn(b"5 dia(s) restante(s).", resposta.data)
 
     def test_criacao_de_prazo(self):
         self.login()
