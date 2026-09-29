@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+{% block title %}Usuários | Administração{% endblock %}
+{% block heading %}Usuários{% endblock %}
+{% block content %}
+<div class="admin-toolbar">
+  <form class="search-form" method="get">
+    <div class="field"><label for="q">Pesquisar usuário</label><input id="q" name="q" value="{{ busca }}" placeholder="Digite o nome de usuário"></div>
+    <button type="submit">Pesquisar</button>
+  </form>
+  <a class="button" href="{{ url_for('admin.criar_usuario') }}">+ Novo usuário</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for usuario in usuarios %}
+        <tr>
+          <td><strong>{{ usuario.username }}</strong>{% if usuario.id == current_user.id %}<span class="badge">Você</span>{% endif %}</td>
+          <td>{{ "Administrador" if usuario.is_admin else "Usuário" }}</td>
+          <td><span class="status-pill {{ 'ok' if usuario.is_active else 'off' }}">{{ "Ativo" if usuario.is_active else "Desativado" }}</span></td>
+          <td>
+            <div class="table-actions">
+              <form method="post" action="{{ url_for('admin.alternar_status', pk=usuario.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button secondary" type="submit">{{ "Desativar" if usuario.is_active else "Ativar" }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.alternar_admin', pk=usuario.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="button secondary" type="submit">{{ "Remover admin" if usuario.is_admin else "Tornar admin" }}</button>
+              </form>
+              <a class="button secondary" href="{{ url_for('admin.redefinir_senha', pk=usuario.id) }}">Redefinir senha</a>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">Nenhum usuário encontrado.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
