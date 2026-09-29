@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from processos.extensions import db
 from processos.models import Cliente
+from processos.services.auditoria import registrar_auditoria
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
 
@@ -126,6 +127,8 @@ def form(cliente=None):
                 db.session.rollback()
                 flash("Já existe um cliente com este CPF/CNPJ.", "error")
             else:
+                registrar_auditoria("ALTERAR" if cliente.id else "CRIAR", "Cliente", cliente.id, f"Cliente salvo: {cliente.nome}.")
+                db.session.commit()
                 flash("Cliente salvo com sucesso.", "success")
                 return redirect(url_for("clientes.detail", pk=cliente.id))
 
@@ -165,7 +168,11 @@ def delete(pk):
             )
             return redirect(url_for("clientes.detail", pk=pk))
 
+        cliente_id = cliente.id
+        cliente_nome = cliente.nome
         db.session.delete(cliente)
+        db.session.commit()
+        registrar_auditoria("EXCLUIR", "Cliente", cliente_id, f"Cliente excluído: {cliente_nome}.")
         db.session.commit()
         flash("Cliente excluído com sucesso.", "success")
         return redirect(url_for("clientes.list"))
