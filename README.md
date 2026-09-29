@@ -47,69 +47,72 @@ Também é possível executar a rotina pela CLI do Flask:
 
 ## Instalação no Windows
 
-A instalação foi preparada para que um usuário sem conhecimento de programação possa configurar o sistema com um único instalador.
+A versão distribuída para usuários finais será um aplicativo Windows empacotado. **Sua mãe não precisa instalar Python, criar ambiente virtual ou usar o CMD.**
 
-### Requisitos
+### Para o usuário final
 
-- Windows 10 ou Windows 11
-- Python 3 instalado no computador
-- Acesso à internet durante a instalação, para baixar as dependências
-- Chave da API pública do DataJud, caso o monitoramento de processos seja utilizado
+1. Baixe o instalador `GestaoProcessos-Setup.exe` na versão mais recente da área **Releases**.
+2. Execute o instalador.
+3. Siga as etapas do instalador.
+4. Ao terminar, o atalho **Gestão de Processos** será criado na Área de Trabalho.
+5. Na primeira abertura, o sistema mostrará a tela de configuração inicial para criar o primeiro administrador e, opcionalmente, informar a chave do DataJud.
 
-### Instalação
+Depois da instalação, o uso diário é apenas:
 
-1. Baixe o código da versão mais recente pela área **Releases** do GitHub.
-2. Extraia o arquivo ZIP em uma pasta do computador.
-3. Entre na pasta extraída.
-4. Dê dois cliques em:
+    Área de Trabalho -> Gestão de Processos
 
-       scripts\instalar_sistema.bat
+O aplicativo contém o runtime Python e as dependências necessários. Não é necessário instalar Python separadamente.
 
-5. O instalador irá:
-   - criar o ambiente virtual Python;
-   - instalar as dependências;
-   - criar automaticamente uma chave secreta para a instalação;
-   - solicitar a chave do DataJud;
-   - preparar o banco SQLite com as migrações;
-   - solicitar os dados do primeiro administrador;
-   - criar o atalho **Gestão de Processos** na Área de Trabalho.
+### Dados do usuário
 
-A senha do administrador deve ter pelo menos 8 caracteres.
+Os dados da aplicação ficam fora da pasta do executável, em uma pasta local do usuário:
 
-A chave do DataJud pode ser deixada em branco durante a instalação e configurada posteriormente no arquivo `.env`.
+    %LOCALAPPDATA%\GestaoProcessos
 
-### Uso diário
+Isso inclui:
 
-Depois da instalação, não é necessário abrir o CMD.
+- banco SQLite;
+- configuração local;
+- logs;
+- backups.
 
-Basta dar dois cliques no atalho **Gestão de Processos** criado na Área de Trabalho. O sistema inicia o servidor local e abre o navegador automaticamente.
+Assim, uma atualização do programa não precisa apagar os dados existentes.
 
-### Configuração do DataJud
+### Desenvolvimento e geração do instalador
 
-A chave da API fica somente no arquivo local `.env` e não deve ser enviada ao GitHub.
+Apenas quem desenvolve o projeto precisa de Python.
 
-Se for necessário configurá-la depois da instalação, abra o arquivo:
+Para gerar o instalador Windows em uma máquina de desenvolvimento:
 
-       .env
+1. Tenha Python 3 instalado.
+2. Tenha o Inno Setup 6 instalado.
+3. Crie o ambiente virtual:
 
-e preencha:
+       python -m venv venv
 
-       DATAJUD_API_KEY=sua-chave-do-datajud
+4. Execute:
 
-### Atualização de uma instalação existente
+       scripts\build_windows.bat
 
-Para atualizar uma instalação já existente:
+O processo instala as ferramentas de build, gera o executável com PyInstaller e cria:
 
-1. Faça uma cópia/backup do banco `flask.db`.
-2. Baixe a nova versão.
-3. Substitua os arquivos do sistema, preservando o arquivo `.env` e o banco local.
-4. Execute novamente `scripts\\instalar_sistema.bat`.
+       installer_output\GestaoProcessos-Setup.exe
 
-O instalador é preparado para reaproveitar o ambiente virtual, a configuração existente e o banco. As novas migrações serão aplicadas automaticamente.
+O instalador é criado com o Inno Setup e já inclui o runtime Python e as dependências dentro do aplicativo.
 
-### Instalação manual
+### Atualizações
 
-Para desenvolvimento ou manutenção, também é possível configurar o projeto manualmente:
+Antes de atualizar uma instalação existente, faça um backup do banco.
+
+A nova versão deve preservar os dados armazenados em:
+
+    %LOCALAPPDATA%\GestaoProcessos
+
+As migrações do Flask-Migrate são aplicadas automaticamente quando o aplicativo é iniciado.
+
+### Instalação manual para desenvolvimento
+
+Para desenvolvimento ou manutenção, continua disponível a instalação tradicional:
 
     python -m venv .venv
 
@@ -117,28 +120,11 @@ No Windows:
 
     .venv\Scripts\activate
 
-Instale as dependências:
-
     pip install -r requirements.txt
 
-Copie `.env.example` para `.env` e configure:
-
-    FLASK_SECRET_KEY=sua-chave-secreta
-    DATAJUD_API_KEY=sua-chave-do-datajud
-
-Depois aplique as migrações:
-
-    flask --app app db upgrade
-
-O banco padrão é SQLite.
-
-## Execução
+Configure o arquivo `.env` e execute:
 
     flask --app app run --debug
-
-A aplicação também pode ser executada com:
-
-    python app.py
 
 ## Segurança
 
