@@ -1,1 +1,125 @@
-<html><body><a href="{{ url_for('dashboard.index') }}">Painel</a><h1>Notificações</h1><form method="post" action="{{ url_for('notificacoes.atualizar_movimentacoes') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Atualizar movimentações do DataJud</button></form>{% with mensagens = get_flashed_messages(with_categories=true) %}{% for categoria, mensagem in mensagens %}<p>{{ mensagem }}</p>{% endfor %}{% endwith %}<h2>Prazos vencidos</h2>{% for prazo in vencidos %}<p>{{ prazo.data_vencimento.strftime('%d/%m/%Y') }} — <a href="{{ url_for('prazos.detail',pk=prazo.id) }}">{{ prazo.titulo }}</a> — {{ prazo.processo.numero_cnj }}</p>{% else %}<p>Nenhum prazo vencido.</p>{% endfor %}<h2>Próximos 7 dias</h2>{% for prazo in prazos_proximos %}<p>{{ prazo.data_vencimento.strftime('%d/%m/%Y') }} — <a href="{{ url_for('prazos.detail',pk=prazo.id) }}">{{ prazo.titulo }}</a> — {{ prazo.dias_restantes }} dia(s)</p>{% else %}<p>Nenhum prazo próximo.</p>{% endfor %}<h2>Novas movimentações</h2>{% for m in movimentos %}<p>{{ m.data.strftime('%d/%m/%Y %H:%M') }} — {{ m.processo.numero_cnj }} — {{ m.descricao }} <form method="post" action="{{ url_for('notificacoes.limpar_alerta_processo',pk=m.processo.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Marcar como visto</button></form></p>{% else %}<p>Nenhuma movimentação pendente.</p>{% endfor %}</body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notificações | Gestão de Processos</title>
+    <style>
+        body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:20px;color:#222}
+        nav{display:flex;gap:16px;margin-bottom:24px}
+        .resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+        .card,.bloco{border:1px solid #ddd;border-radius:8px;padding:18px}
+        .numero{font-size:2rem;font-weight:bold}
+        .bloco{margin:24px 0}
+        .item{padding:14px 0;border-bottom:1px solid #eee}
+        .item:last-child{border-bottom:0}
+        .vencido{border-left:5px solid #b00020;padding-left:14px}
+        .urgente{border-left:5px solid #c77700;padding-left:14px}
+        .acoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        button{cursor:pointer}
+        @media(max-width:700px){.resumo{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('dashboard.index') }}">Painel</a>
+        <a href="{{ url_for('processos.list') }}">Processos</a>
+        <a href="{{ url_for('clientes.list') }}">Clientes</a>
+    </nav>
+
+    <h1>Notificações</h1>
+    <p>Concentre aqui os prazos que exigem atenção e as movimentações novas dos processos.</p>
+
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensagem in mensagens %}
+            <p><strong>{{ mensagem }}</strong></p>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="acoes">
+        <form method="post" action="{{ url_for('notificacoes.atualizar_movimentacoes') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Atualizar movimentações do DataJud</button>
+        </form>
+    </div>
+
+    <section class="resumo">
+        <div class="card">
+            <strong>Prazos vencidos</strong>
+            <div class="numero">{{ vencidos|length }}</div>
+        </div>
+        <div class="card">
+            <strong>Prazos nos próximos 7 dias</strong>
+            <div class="numero">{{ prazos_proximos|length }}</div>
+        </div>
+        <div class="card">
+            <strong>Movimentações novas</strong>
+            <div class="numero">{{ movimentos|length }}</div>
+        </div>
+    </section>
+
+    <section class="bloco">
+        <h2>Prazos vencidos</h2>
+        {% for prazo in vencidos %}
+            <div class="item vencido">
+                <strong><a href="{{ url_for('prazos.detail', pk=prazo.id) }}">{{ prazo.titulo }}</a></strong>
+                — vencido há {{ -prazo.dias_restantes }} dia(s).<br>
+                Processo:
+                <a href="{{ url_for('processos.detail', pk=prazo.processo.id) }}">
+                    {{ prazo.processo.numero_cnj }}
+                </a><br>
+                Cliente: {{ prazo.processo.cliente.nome }}<br>
+                Vencimento: {{ prazo.data_vencimento.strftime('%d/%m/%Y') }}
+            </div>
+        {% else %}
+            <p>Nenhum prazo pendente está vencido.</p>
+        {% endfor %}
+    </section>
+
+    <section class="bloco">
+        <h2>Próximos 7 dias</h2>
+        {% for prazo in prazos_proximos %}
+            <div class="item {% if prazo.dias_restantes <= 2 %}urgente{% endif %}">
+                <strong><a href="{{ url_for('prazos.detail', pk=prazo.id) }}">{{ prazo.titulo }}</a></strong>
+                —
+                {% if prazo.dias_restantes == 0 %}
+                    vence hoje
+                {% elif prazo.dias_restantes == 1 %}
+                    vence amanhã
+                {% else %}
+                    {{ prazo.dias_restantes }} dia(s) restante(s)
+                {% endif %}<br>
+                Processo:
+                <a href="{{ url_for('processos.detail', pk=prazo.processo.id) }}">
+                    {{ prazo.processo.numero_cnj }}
+                </a><br>
+                Cliente: {{ prazo.processo.cliente.nome }}<br>
+                Vencimento: {{ prazo.data_vencimento.strftime('%d/%m/%Y') }}
+            </div>
+        {% else %}
+            <p>Nenhum prazo pendente vence nos próximos 7 dias.</p>
+        {% endfor %}
+    </section>
+
+    <section class="bloco">
+        <h2>Movimentações novas</h2>
+        {% for m in movimentos %}
+            <div class="item">
+                <strong>{{ m.data.strftime('%d/%m/%Y %H:%M') }}</strong><br>
+                Processo:
+                <a href="{{ url_for('processos.detail', pk=m.processo.id) }}">
+                    {{ m.processo.numero_cnj }}
+                </a><br>
+                Cliente: {{ m.processo.cliente.nome }}<br>
+                {{ m.descricao }}
+                <form method="post" action="{{ url_for('notificacoes.limpar_alerta_processo', pk=m.processo.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">Marcar processo como visto</button>
+                </form>
+            </div>
+        {% else %}
+            <p>Nenhuma movimentação nova pendente.</p>
+        {% endfor %}
+    </section>
+</body>
+</html>
