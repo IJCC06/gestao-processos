@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excluir processo | Gestão de Processos</title>
+</head>
+<body>
+    <a href="{{ url_for('processos.detail', pk=processo.id) }}">Voltar</a>
+    <h1>Excluir processo</h1>
+
+    <p>
+        Tem certeza que deseja excluir o processo
+        <strong>{{ processo.numero_cnj }}</strong>?
+    </p>
+    <p>As movimentações e os prazos vinculados também serão excluídos.</p>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Confirmar exclusão</button>
+    </form>
+</body>
+</html>
