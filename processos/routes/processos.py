@@ -73,7 +73,7 @@ def list():
 
     pagina = request.args.get("page", 1, type=int)
     pagina = max(pagina, 1)
-    processos = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
+    processos = db.paginate(db.select(Processo).filter(consulta.whereclause).order_by(Processo.criado_em.desc()), page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/processos/list.html",
