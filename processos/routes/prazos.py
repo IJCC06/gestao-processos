@@ -1,6 +1,6 @@
 from datetime import date
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
 from processos.extensions import db
@@ -18,7 +18,10 @@ def create():
 @prazos_bp.route("/<int:pk>/editar/", methods=["GET", "POST"])
 @login_required
 def update(pk):
-    return form(Prazo.query.get_or_404(pk))
+    prazo = db.session.get(Prazo, pk)
+    if prazo is None:
+        abort(404)
+    return form(prazo)
 
 
 def form(prazo=None):
@@ -111,14 +114,16 @@ def list():
 def detail(pk):
     return render_template(
         "processos/prazos/detail.html",
-        prazo=Prazo.query.get_or_404(pk),
+        prazo=db.session.get(Prazo, pk),
     )
 
 
 @prazos_bp.route("/<int:pk>/excluir/", methods=["GET", "POST"])
 @login_required
 def delete(pk):
-    prazo = Prazo.query.get_or_404(pk)
+    prazo = db.session.get(Prazo, pk)
+    if prazo is None:
+        abort(404)
 
     if request.method == "POST":
         db.session.delete(prazo)
