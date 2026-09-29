@@ -28,10 +28,15 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.processo = Processo(cliente=self.cliente, numero_cnj="0000000-00.2026.8.00.0000", area=Processo.Area.CIVEL, tribunal="Tribunal de Teste", tribunal_alias="tst")
             db.session.add(self.processo)
             db.session.commit()
+            self.usuario_id = self.usuario.id
+            self.cliente_id = self.cliente.id
+            self.processo_id = self.processo_id
 
     def tearDown(self):
         with self.app.app_context():
+            db.session.remove()
             db.drop_all()
+            db.session.remove()
         os.unlink(self.db_file.name)
         os.environ.pop("DATABASE_URL", None)
 
@@ -62,7 +67,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
     def test_criacao_de_processo(self):
         self.login()
-        resposta=self.client.post("/processos/novo/",data={"cliente":self.processo.cliente_id,"numero_cnj":"1111111-11.2026.8.00.0000","area":Processo.Area.TRABALHISTA,"tribunal":"Tribunal de Teste","tribunal_alias":"tst","fase":"Inicial","status":Processo.Status.ATIVO,"valor_causa":"1000.00","honorarios":"100.00"})
+        resposta=self.client.post("/processos/novo/",data={"cliente":self.cliente_id,"numero_cnj":"1111111-11.2026.8.00.0000","area":Processo.Area.TRABALHISTA,"tribunal":"Tribunal de Teste","tribunal_alias":"tst","fase":"Inicial","status":Processo.Status.ATIVO,"valor_causa":"1000.00","honorarios":"100.00"})
         self.assertEqual(resposta.status_code,302)
         with self.app.app_context(): self.assertIsNotNone(Processo.query.filter_by(numero_cnj="1111111-11.2026.8.00.0000").first())
 
@@ -85,7 +90,8 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
     def test_marcar_alerta_como_visto(self):
         with self.app.app_context():
-            self.processo.alerta_pendente=True
+            processo = db.session.get(Processo, self.processo_id)
+            processo.alerta_pendente=True
             db.session.commit()
         self.login()
         resposta=self.client.post(f"/notificacoes/processos/{self.processo.id}/limpar/")
