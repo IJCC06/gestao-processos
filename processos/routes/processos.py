@@ -71,7 +71,9 @@ def list():
     if area in Processo.Area.values():
         consulta = consulta.filter(Processo.area == area)
 
-    processos = consulta.all()
+    pagina = request.args.get("page", 1, type=int)
+    pagina = max(pagina, 1)
+    processos = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/processos/list.html",
