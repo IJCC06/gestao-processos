@@ -5,17 +5,12 @@ __pycache__/
 venv/
 .venv/
 
-# Banco de dados local
-*.db
-*.sqlite3
-
-# Arquivos de ambiente e logs
-.env
+# Django
 *.log
-
-# Arquivos gerados pela aplicação
+db.sqlite3
 media/
 staticfiles/
+.env
 
 # Editor
 .vscode/
