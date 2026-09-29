@@ -237,7 +237,9 @@ def atualizar_movimentacoes(pk):
 @processos_bp.get("/<int:pk>/")
 @login_required
 def detail(pk):
-    processo = db.get_or_404(Processo, pk)
+    processo = db.session.get(Processo, pk)
+    if processo is None:
+        abort(404)
     return render_template(
         "processos/processos/detail.html",
         processo=processo,
