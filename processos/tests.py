@@ -53,7 +53,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
             processo = Processo(
                 cliente=cliente,
-                numero_cnj="0000000-00.2026.8.00.0000",
+                numero_cnj="0000000-49.2026.8.00.0000",
                 area=Processo.Area.CIVEL,
                 tribunal="Tribunal de Teste",
                 tribunal_alias="tst",
@@ -289,7 +289,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             "/processos/novo/",
             data={
                 "cliente": self.cliente_id,
-                "numero_cnj": "1111111-11.2026.8.00.0000",
+                "numero_cnj": "1111111-62.2026.8.00.0000",
                 "area": Processo.Area.TRABALHISTA,
                 "tribunal": "Tribunal de Teste",
                 "tribunal_alias": "tst",
@@ -304,7 +304,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         with self.app.app_context():
             self.assertIsNotNone(
                 Processo.query.filter_by(
-                    numero_cnj="1111111-11.2026.8.00.0000"
+                    numero_cnj="1111111-62.2026.8.00.0000"
                 ).first()
             )
 
@@ -313,7 +313,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             cliente = Cliente(nome="Maria de Souza", cpf_cnpj="98765432100")
             processo_suspenso = Processo(
                 cliente=cliente,
-                numero_cnj="1111111-11.2026.8.01.0001",
+                numero_cnj="1111111-63.2026.8.01.0001",
                 area=Processo.Area.TRABALHISTA,
                 tribunal="TRT da 2ª Região",
                 tribunal_alias="trt2",
@@ -321,7 +321,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             )
             processo_arquivado = Processo(
                 cliente=cliente,
-                numero_cnj="2222222-22.2026.8.02.0002",
+                numero_cnj="2222222-76.2026.8.02.0002",
                 area=Processo.Area.PREVIDENCIARIO,
                 tribunal="TRF da 3ª Região",
                 tribunal_alias="trf3",
@@ -334,21 +334,21 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get("/processos/", query_string={"q": "Maria de Souza"})
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
-        self.assertIn(b"2222222-22.2026.8.02.0002", resposta.data)
-        self.assertNotIn(b"0000000-00.2026.8.00.0000", resposta.data)
+        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
+        self.assertIn(b"2222222-76.2026.8.02.0002", resposta.data)
+        self.assertNotIn(b"0000000-49.2026.8.00.0000", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"q": "TRT da 2"})
-        self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
-        self.assertNotIn(b"2222222-22.2026.8.02.0002", resposta.data)
+        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
+        self.assertNotIn(b"2222222-76.2026.8.02.0002", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"status": Processo.Status.SUSPENSO})
-        self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
-        self.assertNotIn(b"0000000-00.2026.8.00.0000", resposta.data)
+        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
+        self.assertNotIn(b"0000000-49.2026.8.00.0000", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"area": Processo.Area.PREVIDENCIARIO})
-        self.assertIn(b"2222222-22.2026.8.02.0002", resposta.data)
-        self.assertNotIn(b"1111111-11.2026.8.01.0001", resposta.data)
+        self.assertIn(b"2222222-76.2026.8.02.0002", resposta.data)
+        self.assertNotIn(b"1111111-63.2026.8.01.0001", resposta.data)
 
         resposta = self.client.get(
             "/processos/",
@@ -358,8 +358,8 @@ class FluxosPrincipaisTests(unittest.TestCase):
                 "area": Processo.Area.TRABALHISTA,
             },
         )
-        self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
-        self.assertNotIn(b"2222222-22.2026.8.02.0002", resposta.data)
+        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
+        self.assertNotIn(b"2222222-76.2026.8.02.0002", resposta.data)
 
     def test_detalhes_do_processo_exibem_resumo_prazos_movimentacoes_e_alerta(self):
         with self.app.app_context():
@@ -386,7 +386,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.login()
         resposta = self.client.get(f"/processos/{self.processo_id}/")
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Processo 0000000-00.2026.8.00.0000", resposta.data)
+        self.assertIn(b"Processo 0000000-49.2026.8.00.0000", resposta.data)
         self.assertIn(b"Cliente Teste", resposta.data)
         self.assertIn(b"Intima", resposta.data)
         self.assertIn(b"Manifest", resposta.data)
@@ -500,6 +500,137 @@ class FluxosPrincipaisTests(unittest.TestCase):
             resultado = verificar_movimentacoes()
             self.assertEqual(resultado["total_novas"], 0)
             self.assertEqual(Movimentacao.query.count(), 1)
+
+
+    def test_criacao_de_processo_rejeita_numero_cnj_invalido(self):
+        self.login()
+        resposta = self.client.post(
+            "/processos/novo/",
+            data={
+                "cliente": self.cliente_id,
+                "numero_cnj": "0000000-00.2026.8.00.0000",
+                "area": Processo.Area.CIVEL,
+                "tribunal": "Tribunal de Teste",
+                "status": Processo.Status.ATIVO,
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Informe um n", resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Processo.query.count(), 1)
+
+    def test_criacao_de_processo_rejeita_area_status_e_valor_invalidos(self):
+        self.login()
+        base = {
+            "cliente": self.cliente_id,
+            "numero_cnj": "3333333-88.2026.8.00.0000",
+            "area": "inexistente",
+            "tribunal": "Tribunal de Teste",
+            "status": "inexistente",
+        }
+
+        resposta = self.client.post("/processos/novo/", data=base)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Selecione uma", resposta.data)
+
+        base["area"] = Processo.Area.CIVEL
+        base["status"] = Processo.Status.ATIVO
+        base["valor_causa"] = "-10.00"
+        resposta = self.client.post("/processos/novo/", data=base)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"valores financeiros", resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Processo.query.count(), 1)
+
+    def test_edicao_de_processo_preserva_dados_digitados_em_erro(self):
+        self.login()
+        resposta = self.client.post(
+            f"/processos/{self.processo_id}/editar/",
+            data={
+                "cliente": self.cliente_id,
+                "numero_cnj": "9999999-99.2026.8.00.0000",
+                "area": "invalida",
+                "tribunal": "Tribunal Digitado",
+                "tribunal_alias": "alias-digitado",
+                "fase": "Fase Digitada",
+                "status": Processo.Status.ATIVO,
+                "valor_causa": "1234.56",
+                "honorarios": "123.45",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"9999999-99.2026.8.00.0000", resposta.data)
+        self.assertIn(b"Tribunal Digitado", resposta.data)
+        self.assertIn(b"alias-digitado", resposta.data)
+        self.assertIn(b"Fase Digitada", resposta.data)
+        self.assertIn(b"1234.56", resposta.data)
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            self.assertEqual(processo.numero_cnj, "0000000-49.2026.8.00.0000")
+
+    def test_edicao_de_processo_atualiza_dados(self):
+        self.login()
+        resposta = self.client.post(
+            f"/processos/{self.processo_id}/editar/",
+            data={
+                "cliente": self.cliente_id,
+                "numero_cnj": "3333333-88.2026.8.00.0000",
+                "area": Processo.Area.TRABALHISTA,
+                "tribunal": "TRT de Teste",
+                "tribunal_alias": "trt1",
+                "fase": "Recursal",
+                "status": Processo.Status.SUSPENSO,
+                "valor_causa": "2500.50",
+                "honorarios": "250.00",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            self.assertEqual(processo.numero_cnj, "3333333-88.2026.8.00.0000")
+            self.assertEqual(processo.area, Processo.Area.TRABALHISTA)
+            self.assertEqual(processo.status, Processo.Status.SUSPENSO)
+            self.assertEqual(str(processo.valor_causa), "2500.50")
+            self.assertEqual(str(processo.honorarios), "250.00")
+
+    def test_exclusao_de_processo_remove_vinculos(self):
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            db.session.add_all([
+                Movimentacao(
+                    processo=processo,
+                    data=datetime.now(timezone.utc),
+                    descricao="Movimentacao para exclusao",
+                    origem="manual",
+                ),
+                Prazo(
+                    processo=processo,
+                    titulo="Prazo para exclusao",
+                    data_vencimento=Config.local_date() + timedelta(days=2),
+                ),
+            ])
+            db.session.commit()
+
+        self.login()
+        resposta = self.client.post(
+            f"/processos/{self.processo_id}/excluir/",
+            follow_redirects=True,
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Processo exclu", resposta.data)
+
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Processo, self.processo_id))
+            self.assertEqual(Movimentacao.query.count(), 0)
+            self.assertEqual(Prazo.query.count(), 0)
 
 
 if __name__ == "__main__":
