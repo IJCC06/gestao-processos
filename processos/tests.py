@@ -127,7 +127,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn(b"Vencido", resposta.data)
         self.assertIn(b"Proximo", resposta.data)
         self.assertIn(b"Prazos vencidos", resposta.data)
-        self.assertIn(b"Prximos 7 dias", resposta.data)
+        self.assertIn("Próximos 7 dias".encode("utf-8"), resposta.data)
         self.assertIn(b"Movimenta", resposta.data)
 
     def test_criacao_de_cliente(self):
@@ -170,7 +170,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         )
 
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"J\\xc3\\xa1 existe um cliente com este CPF/CNPJ.", resposta.data)
+        self.assertIn("Já existe um cliente com este CPF/CNPJ.".encode("utf-8"), resposta.data)
 
         with self.app.app_context():
             self.assertEqual(Cliente.query.count(), 1)
