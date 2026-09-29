@@ -124,7 +124,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         with self.app.app_context():
             clientes = [
                 Cliente(nome=f"Cliente {i:02d}", cpf_cnpj=f"529982247{i:02d}")
-                for i in range(20)
+                for i in range(40)
             ]
             db.session.add_all(clientes)
 
