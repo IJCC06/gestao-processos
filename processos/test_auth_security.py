@@ -97,3 +97,45 @@ class AuthSecurityTests(unittest.TestCase):
 
     def test_debug_fica_desabilitado_por_padrao(self):
         self.assertFalse(self.app.config["DEBUG"])
+
+    def test_rotas_protegidas_exigem_login(self):
+        rotas = [
+            "/",
+            "/clientes/",
+            "/clientes/novo/",
+            "/processos/",
+            "/processos/novo/",
+            "/prazos/",
+            "/prazos/novo/",
+            "/notificacoes/",
+        ]
+
+        for rota in rotas:
+            with self.subTest(rota=rota):
+                resposta = self.client.get(rota)
+                self.assertEqual(resposta.status_code, 302)
+                self.assertIn("/login/", resposta.location)
+
+    def test_logout_exige_login(self):
+        resposta = self.client.post("/logout/")
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
+
+    def test_logout_remove_a_sessao_autenticada(self):
+        self.app.config["WTF_CSRF_ENABLED"] = False
+        resposta = self.client.post(
+            "/login/",
+            data={
+                "username": "teste",
+                "password": "senha-segura-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        resposta = self.client.post("/logout/")
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
+
+        resposta = self.client.get("/")
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
