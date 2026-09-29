@@ -14,10 +14,15 @@
         <h1>Painel</h1>
         <p class="dashboard-subtitle">Olá, {{ current_user.username }}. Aqui está o resumo do escritório.</p>
       </div>
-      <form class="dashboard-logout" method="post" action="{{ url_for('auth.logout') }}">
+      <div class="actions dashboard-header-actions">
+        {% if current_user.is_admin %}
+          <a class="button secondary" href="{{ url_for('admin.index') }}">Administração</a>
+        {% endif %}
+        <form class="dashboard-logout" method="post" action="{{ url_for('auth.logout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit">Sair</button>
-      </form>
+        </form>
+      </div>
     </header>
 
     <section class="stats-grid" aria-label="Resumo">
