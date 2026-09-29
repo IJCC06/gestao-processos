@@ -1,125 +1,108 @@
 # Sistema de Gestão de Processos Jurídicos
 
-Sistema web para advogados gerenciarem clientes e acompanharem processos judiciais, com foco nas áreas trabalhista, cível e previdenciária. O sistema integra a API pública do DataJud (CNJ) para monitorar movimentações processuais.
+Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e movimentações processuais. A aplicação utiliza a API pública do DataJud (CNJ) para consultar movimentações de processos.
 
 ## Stack
 
-- Backend: Python + Django
-- Banco atual: SQLite
-- Frontend: Django Templates (interface própria em desenvolvimento)
+- Backend: Python + Flask
+- ORM e banco: Flask-SQLAlchemy + SQLite por padrão
+- Autenticação: Flask-Login
+- Formulários e CSRF: Flask-WTF
+- Frontend: Jinja2 Templates + HTML/CSS
 - Integração externa: API Pública do DataJud (CNJ)
 
-## Estado atual
+## Funcionalidades implementadas
 
-### Implementado
-
-- Modelos de clientes, processos e movimentações
-- Relacionamento Cliente → Processo → Movimentação
-- Administração pelo Django Admin
-- Integração com o DataJud
-- Comando para verificar movimentações
-- Prevenção de duplicação de movimentações
-- Credenciais configuradas por variáveis de ambiente
-- Configurações básicas de segurança
-
-### Em desenvolvimento
-
-- Login e autenticação da interface
+- Autenticação de usuários
 - Dashboard
-- Cadastro e edição pela interface própria
-- Busca e filtros
-- Linha do tempo
-- Visualização e baixa de alertas
-- Agendamento periódico da verificação
-- Testes automatizados
+- Cadastro de clientes
+- Cadastro de processos
+- Cadastro de prazos
+- Área de notificações
+- Consulta manual de movimentações pelo DataJud
+- Prevenção de duplicação de movimentações
+- Proteção CSRF nos formulários
+- Configuração por variáveis de ambiente
+- Testes automatizados dos principais fluxos
 
-### Futuro
+## Atualização das movimentações
 
-- Controle de prazos
-- Agenda de audiências
-- Controle financeiro
-- Múltiplos advogados/usuários
-- Anexação de documentos
-- Auditoria de acessos e alterações
+A atualização é feita manualmente dentro do sistema, pela área de notificações. Não há dependência de Celery, Redis ou outro serviço de tarefas em segundo plano.
 
-## Verificação de movimentações
+A rotina seleciona processos não arquivados, consulta o DataJud, valida as movimentações recebidas e grava somente novidades.
 
-A rotina atual:
+Também é possível executar a rotina pela CLI do Flask:
 
-1. Seleciona processos não arquivados.
-2. Ignora processos sem tribunal_alias.
-3. Consulta o DataJud pelo número CNJ.
-4. Converte e valida as datas recebidas.
-5. Verifica se cada movimentação já existe usando processo, data, descrição e origem.
-6. Insere somente movimentações novas.
-7. Marca alerta_pendente quando há novidade.
+    flask verificar-movimentacoes
 
-Execução manual:
-
-    python manage.py verificar_movimentacoes
-
-O agendamento automático será implementado posteriormente.
-
-## Segurança
-
-O sistema lida com dados pessoais e, por isso, a segurança faz parte do desenvolvimento.
-
-- DJANGO_SECRET_KEY é obrigatória e não fica no código.
-- DATAJUD_API_KEY é obtida por variável de ambiente.
-- .env não deve ser versionado.
-- .env.example não contém credenciais.
-- CSRF permanece habilitado pelo middleware do Django.
-- Senhas serão tratadas pelo sistema de autenticação do Django.
-- O ORM é usado para evitar SQL manual inseguro.
-- Cookies seguros podem ser ativados para produção.
-- HTTPS deve ser utilizado em produção.
-- Backups, logs/auditoria e política de retenção ainda precisam ser implementados.
-
-## Estrutura de dados
-
-    Cliente
-      |
-      +-- Processo
-            |
-            +-- Movimentacao
-
-### Cliente
-
-Dados cadastrais da pessoa ou empresa atendida.
-
-### Processo
-
-Processo judicial vinculado a um cliente, contendo número CNJ, área, tribunal, fase e status.
-
-### Movimentacao
-
-Evento processual associado a um processo, contendo data, descrição e origem.
-
-## Limitações conhecidas
-
-- A consulta depende do número CNJ e do alias correto do tribunal.
-- A disponibilidade de dados depende da API pública do DataJud.
-- O sistema ainda não controla prazos processuais.
-- A interface própria ainda está em desenvolvimento.
-- A verificação ainda precisa ser ligada a um agendador para execução automática.
-
-## Desenvolvimento
+## Configuração
 
 Crie um ambiente virtual:
 
     python -m venv .venv
 
+No Windows:
+
+    .venv\Scripts\activate
+
 Instale as dependências:
 
     pip install -r requirements.txt
 
-Copie .env.example para .env e preencha pelo menos DJANGO_SECRET_KEY e DATAJUD_API_KEY.
+Copie .env.example para .env e configure as variáveis necessárias, incluindo:
 
-Depois:
+    FLASK_SECRET_KEY=sua-chave-secreta
+    DATAJUD_API_KEY=sua-chave-do-datajud
 
-    python manage.py migrate
-    python manage.py runserver
+O banco padrão é SQLite e será criado como flask.db.
 
-Para criar um usuário administrativo:
+## Execução
 
-    python manage.py createsuperuser
+    flask --app app run --debug
+
+A aplicação também pode ser executada com:
+
+    python app.py
+
+As tabelas são criadas automaticamente na inicialização da aplicação.
+
+## Testes
+
+    python -m unittest discover processos -p "test*.py" -v
+
+Os testes utilizam SQLite em memória para não alterar o banco local de desenvolvimento.
+
+## Estrutura
+
+    .
+    ├── app.py
+    ├── config/
+    │   └── settings.py
+    ├── processos/
+    │   ├── models.py
+    │   ├── extensions.py
+    │   ├── routes/
+    │   ├── services/
+    │   ├── static/
+    │   └── tests.py
+    ├── .env.example
+    ├── .gitignore
+    └── requirements.txt
+
+## Segurança
+
+O sistema lida com dados pessoais e deve ser configurado com atenção antes de qualquer uso em produção.
+
+- Segredos devem ficar em variáveis de ambiente.
+- .env não deve ser versionado.
+- CSRF está habilitado por meio do Flask-WTF.
+- Senhas são armazenadas usando hash.
+- HTTPS deve ser utilizado em produção.
+- A chave secreta padrão deve ser substituída por uma chave forte.
+- Backups, auditoria e política de retenção devem ser definidos antes da implantação em produção.
+
+## DataJud
+
+A disponibilidade e o conteúdo das movimentações dependem da API pública do DataJud e da configuração correta do tribunal.
+
+A chave da API deve ser configurada em DATAJUD_API_KEY e não deve ser publicada no repositório.
