@@ -130,6 +130,29 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn("Próximos 7 dias".encode("utf-8"), resposta.data)
         self.assertIn(b"movimenta", resposta.data)
 
+    def test_lista_de_clientes_exibe_clientes_e_permite_busca(self):
+        with self.app.app_context():
+            outro = Cliente(
+                nome="Maria de Souza",
+                cpf_cnpj="11144477735",
+                contato="maria@example.com",
+            )
+            db.session.add(outro)
+            db.session.commit()
+
+        self.login()
+
+        resposta = self.client.get("/clientes/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Cliente Teste", resposta.data)
+        self.assertIn(b"Maria de Souza", resposta.data)
+        self.assertIn(b"Novo cliente", resposta.data)
+
+        resposta = self.client.get("/clientes/", query_string={"q": "Maria"})
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Maria de Souza", resposta.data)
+        self.assertNotIn(b"Cliente Teste", resposta.data)
+
     def test_criacao_de_cliente(self):
         self.login()
         resposta = self.client.post(
