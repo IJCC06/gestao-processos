@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 from datetime import timedelta
 from unittest.mock import patch
@@ -36,6 +37,9 @@ class FluxosPrincipaisTests(unittest.TestCase):
         os.environ.pop("DATABASE_URL", None)
 
     def setUp(self):
+        self._perf_setup_start = time.perf_counter()
+        self._perf_login_total = 0.0
+
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
@@ -64,12 +68,37 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.processo_id = processo.id
 
         self.client = self.app.test_client()
+        self._perf_setup_elapsed = time.perf_counter() - self._perf_setup_start
+        self._perf_test_start = time.perf_counter()
 
     def tearDown(self):
+        test_elapsed = time.perf_counter() - self._perf_test_start
+        teardown_start = time.perf_counter()
+
         with self.app.app_context():
             db.session.remove()
 
+        teardown_elapsed = time.perf_counter() - teardown_start
+        print(
+            f"[PERF] {self.id()} | "
+            f"setUp={self._perf_setup_elapsed:.4f}s | "
+            f"login={self._perf_login_total:.4f}s | "
+            f"teste={test_elapsed:.4f}s | "
+            f"tearDown={teardown_elapsed:.4f}s | "
+            f"total={self._perf_setup_elapsed + test_elapsed + teardown_elapsed:.4f}s"
+        )
+
     def login(self):
+        start = time.perf_counter()
+        resposta = self.client.post(
+            "/login/",
+            data={"username": "teste", "password": "senha-segura-123"},
+            follow_redirects=False,
+        )
+        self._perf_login_total += time.perf_counter() - start
+        return resposta
+
+    def _login_unused_placeholder(self):
         return self.client.post(
             "/login/",
             data={"username": "teste", "password": "senha-segura-123"},
