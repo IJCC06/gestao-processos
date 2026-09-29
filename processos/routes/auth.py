@@ -58,40 +58,8 @@ def login():
 
 @auth_bp.route("/cadastro/", methods=["GET", "POST"])
 def cadastro():
-    if current_user.is_authenticated:
-        return redirect(url_for("dashboard.index"))
-
-    username = request.form.get("username", "").strip()
-    password = request.form.get("password", "")
-    password_confirmation = request.form.get("password_confirmation", "")
-
-    if request.method == "POST":
-        if not username:
-            flash("Informe um nome de usuário.", "error")
-        elif len(username) < 3:
-            flash("O nome de usuário deve ter pelo menos 3 caracteres.", "error")
-        elif len(username) > 150:
-            flash("O nome de usuário deve ter no máximo 150 caracteres.", "error")
-        elif Usuario.query.filter_by(username=username).first():
-            flash("Este nome de usuário já está em uso.", "error")
-        elif len(password) < 8:
-            flash("A senha deve ter pelo menos 8 caracteres.", "error")
-        elif password != password_confirmation:
-            flash("As senhas não coincidem.", "error")
-        else:
-            usuario = Usuario(username=username, is_active=True, is_admin=False)
-            usuario.set_password(password)
-            db.session.add(usuario)
-            db.session.commit()
-            registrar_auditoria("CRIAR", "Usuario", usuario.id, f"Cadastro público de usuário: {usuario.username}.")
-            db.session.commit()
-            flash("Cadastro realizado com sucesso. Agora entre com sua conta.", "success")
-            return redirect(url_for("auth.login"))
-
-    return render_template(
-        "registration/cadastro.html",
-        username=username,
-    )
+    flash("A criação de usuários é feita exclusivamente por um administrador.", "error")
+    return redirect(url_for("auth.login"))
 
 
 @auth_bp.post("/logout/")
