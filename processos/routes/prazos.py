@@ -137,7 +137,9 @@ def delete(pk):
 @prazos_bp.post("/<int:pk>/concluir/")
 @login_required
 def concluir(pk):
-    prazo = Prazo.query.get_or_404(pk)
+    prazo = db.session.get(Prazo, pk)
+    if prazo is None:
+        abort(404)
     prazo.status = Prazo.Status.CONCLUIDO
     db.session.commit()
     flash("Prazo marcado como concluído.", "success")
