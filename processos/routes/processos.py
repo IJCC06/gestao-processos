@@ -228,7 +228,7 @@ def atualizar_movimentacoes(pk):
     resultado = verificar_movimentacao_processo(processo)
 
     if resultado["erro"]:
-        db.session.rollback()
+        db.session.commit()
         flash(
             f"Não foi possível atualizar o processo: {resultado['erro']}",
             "error",
