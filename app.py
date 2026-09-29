@@ -6,7 +6,7 @@ from flask_login import LoginManager, current_user
 from flask_wtf import CSRFProtect
 
 from config.settings import Config
-from processos.extensions import db
+from processos.extensions import db, migrate
 from processos.models import Usuario
 from processos.services.movimentacoes import verificar_movimentacoes
 from processos.routes import (
@@ -40,11 +40,9 @@ def create_app():
         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
-
-    with app.app_context():
-        db.create_all()
 
     register_routes(app)
     register_blueprints(app)
