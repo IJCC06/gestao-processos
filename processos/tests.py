@@ -464,7 +464,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get(f"/prazos/{prazo_id}/excluir/")
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Confirmar exclusao", resposta.data)
+        self.assertIn("Confirmar exclusão".encode("utf-8"), resposta.data)
 
         resposta = self.client.post(f"/prazos/{prazo_id}/excluir/", follow_redirects=True)
         self.assertEqual(resposta.status_code, 200)
@@ -499,7 +499,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             },
         )
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Selecione um status valido.", resposta.data)
+        self.assertIn("Selecione um status válido.".encode("utf-8"), resposta.data)
 
         with self.app.app_context():
             self.assertEqual(Prazo.query.count(), 0)
