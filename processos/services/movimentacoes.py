@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 
 from processos.extensions import db
 from processos.models import Movimentacao, Processo
@@ -6,18 +7,42 @@ from processos.services.datajud import DataJudError, consultar_movimentacoes
 
 
 def verificar_movimentacoes():
+    perf_start = time.perf_counter()
     processos = Processo.query.filter(Processo.status != Processo.Status.ARQUIVADO).all()
+    perf_busca_processos = time.perf_counter() - perf_start
+
     total_novas = 0
     erros = 0
+    print(
+        f"[PERF-MOV] processos={len(processos)} | "
+        f"busca_processos={perf_busca_processos:.4f}s"
+    )
+
     for processo in processos:
         if not processo.tribunal_alias:
             erros += 1
+            print(
+                f"[PERF-MOV] processo_id={processo.id} | "
+                f"status=sem_tribunal_alias"
+            )
             continue
+
+        perf_processo_start = time.perf_counter()
         try:
-            movimentos = consultar_movimentacoes(processo.numero_cnj, processo.tribunal_alias)
+            movimentos = consultar_movimentacoes(
+                processo.numero_cnj, processo.tribunal_alias
+            )
         except DataJudError:
             erros += 1
+            print(
+                f"[PERF-MOV] processo_id={processo.id} | "
+                f"consulta=erro | tempo={time.perf_counter() - perf_processo_start:.4f}s"
+            )
             continue
+
+        perf_consulta = time.perf_counter() - perf_processo_start
+        perf_processamento_start = time.perf_counter()
+
         novas = 0
         for mov in movimentos:
             data_hora_str = mov.get("dataHora")
@@ -28,13 +53,45 @@ def verificar_movimentacoes():
             except ValueError:
                 continue
             descricao = mov.get("nome") or "Movimentação sem descrição"
-            existente = Movimentacao.query.filter_by(processo_id=processo.id, data=data_hora, descricao=descricao, origem="datajud").first()
+            existente = Movimentacao.query.filter_by(
+                processo_id=processo.id,
+                data=data_hora,
+                descricao=descricao,
+                origem="datajud",
+            ).first()
             if existente:
                 continue
-            db.session.add(Movimentacao(processo=processo, data=data_hora, descricao=descricao, origem="datajud"))
+            db.session.add(
+                Movimentacao(
+                    processo=processo,
+                    data=data_hora,
+                    descricao=descricao,
+                    origem="datajud",
+                )
+            )
             novas += 1
+
+        perf_processamento = time.perf_counter() - perf_processamento_start
+
         if novas:
             processo.alerta_pendente = True
             total_novas += novas
+
+        print(
+            f"[PERF-MOV] processo_id={processo.id} | "
+            f"movimentacoes={len(movimentos)} | "
+            f"consulta={perf_consulta:.4f}s | "
+            f"processamento={perf_processamento:.4f}s | "
+            f"novas={novas}"
+        )
+
+    perf_commit_start = time.perf_counter()
     db.session.commit()
+    perf_commit = time.perf_counter() - perf_commit_start
+
+    print(
+        f"[PERF-MOV] commit={perf_commit:.4f}s | "
+        f"total={time.perf_counter() - perf_start:.4f}s"
+    )
+
     return {"total_processos": len(processos), "total_novas": total_novas, "erros": erros}
