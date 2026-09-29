@@ -5,10 +5,12 @@ import os
 import requests
 
 BASE_URL = "https://api-publica.datajud.cnj.jus.br"
+CONNECT_TIMEOUT = 5
+READ_TIMEOUT = 20
 
 
 class DataJudError(Exception):
-    """Erro ao consultar a API do DataJud."""
+    """Erro controlado ao consultar a API do DataJud."""
 
 
 def _api_key() -> str:
@@ -20,12 +22,31 @@ def _api_key() -> str:
     return api_key
 
 
+def _mensagem_status_http(status_code: int) -> str:
+    if status_code in (401, 403):
+        return (
+            "O DataJud recusou a autenticação. "
+            "Verifique a DATAJUD_API_KEY configurada."
+        )
+    if status_code == 429:
+        return (
+            "O DataJud limitou temporariamente as consultas. "
+            "Tente novamente mais tarde."
+        )
+    if 500 <= status_code <= 599:
+        return (
+            f"O DataJud está indisponível no momento (HTTP {status_code}). "
+            "Tente novamente mais tarde."
+        )
+    return f"O DataJud retornou HTTP {status_code}."
+
+
 def consultar_movimentacoes(numero_cnj: str, tribunal_alias: str) -> list[dict]:
     if not tribunal_alias:
         raise DataJudError("tribunal_alias não informado para este processo")
 
     numero_limpo = "".join(filter(str.isdigit, numero_cnj))
-    if not numero_limpo:
+    if len(numero_limpo) != 20:
         raise DataJudError("número CNJ inválido ou vazio")
 
     url = f"{BASE_URL}/api_publica_{tribunal_alias.lower()}/_search"
@@ -36,20 +57,60 @@ def consultar_movimentacoes(numero_cnj: str, tribunal_alias: str) -> list[dict]:
     body = {"query": {"match": {"numeroProcesso": numero_limpo}}}
 
     try:
-        resposta = requests.post(url, json=body, headers=headers, timeout=20)
-        resposta.raise_for_status()
-        dados = resposta.json()
+        resposta = requests.post(
+            url,
+            json=body,
+            headers=headers,
+            timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
+        )
+    except requests.Timeout as exc:
+        raise DataJudError(
+            "O DataJud demorou demais para responder. Tente novamente."
+        ) from exc
+    except requests.ConnectionError as exc:
+        raise DataJudError(
+            "Não foi possível conectar ao DataJud. Verifique a conexão e tente novamente."
+        ) from exc
     except requests.RequestException as exc:
-        raise DataJudError(f"Falha ao consultar o DataJud: {exc}") from exc
-    except ValueError as exc:
-        raise DataJudError("O DataJud retornou uma resposta JSON inválida") from exc
+        raise DataJudError(f"Falha de comunicação com o DataJud: {exc}") from exc
 
-    hits = dados.get("hits", {}).get("hits", [])
+    if resposta.status_code >= 400:
+        raise DataJudError(_mensagem_status_http(resposta.status_code))
+
+    try:
+        dados = resposta.json()
+    except ValueError as exc:
+        raise DataJudError("O DataJud retornou uma resposta JSON inválida.") from exc
+
+    if not isinstance(dados, dict):
+        raise DataJudError("O DataJud retornou uma resposta em formato inválido.")
+
+    hits_container = dados.get("hits")
+    if not isinstance(hits_container, dict):
+        raise DataJudError("Resposta do DataJud sem a estrutura esperada de resultados.")
+
+    hits = hits_container.get("hits", [])
+    if not isinstance(hits, list):
+        raise DataJudError("Resposta do DataJud contém resultados em formato inválido.")
+
     if not hits:
         return []
 
-    movimentos = hits[0].get("_source", {}).get("movimentos", [])
-    if not isinstance(movimentos, list):
-        raise DataJudError("Resposta do DataJud contém movimentações em formato inválido")
+    primeiro_hit = hits[0]
+    if not isinstance(primeiro_hit, dict):
+        raise DataJudError("Resposta do DataJud contém um resultado em formato inválido.")
 
-    return sorted(movimentos, key=lambda m: m.get("dataHora", ""))
+    source = primeiro_hit.get("_source", {})
+    if not isinstance(source, dict):
+        raise DataJudError("Resposta do DataJud contém dados do processo em formato inválido.")
+
+    movimentos = source.get("movimentos", [])
+    if not isinstance(movimentos, list):
+        raise DataJudError(
+            "Resposta do DataJud contém movimentações em formato inválido."
+        )
+
+    return sorted(
+        (movimento for movimento in movimentos if isinstance(movimento, dict)),
+        key=lambda movimento: movimento.get("dataHora", ""),
+    )
