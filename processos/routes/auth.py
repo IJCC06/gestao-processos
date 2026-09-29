@@ -10,7 +10,7 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login/", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard.index"))
 
     if request.method == "POST":
         usuario = Usuario.query.filter_by(
@@ -36,7 +36,7 @@ def login():
                 )
 
             return redirect(
-                request.args.get("next") or url_for("dashboard")
+                request.args.get("next") or url_for("dashboard.index")
             )
 
         flash("Usuário ou senha inválidos.", "error")
