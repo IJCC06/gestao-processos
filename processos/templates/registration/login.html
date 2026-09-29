@@ -1,1 +1,305 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar | Gestão de Processos</title><style>body{font-family:Arial,sans-serif;max-width:420px;margin:80px auto;padding:20px}form{display:grid;gap:12px}input{padding:10px;font-size:1rem}.erro{color:#a00}</style></head><body><h1>Gestão de Processos</h1><p>Entre com sua conta para acessar o sistema.</p>{% with messages=get_flashed_messages() %}{% for message in messages %}<p class="erro">{{ message }}</p>{% endfor %}{% endwith %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Usuário<input name="username" required></label><label>Senha<input type="password" name="password" required></label><button type="submit">Entrar</button></form></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar | Gestão de Processos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='processos/css/app.css') }}">
+    <style>
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(36, 87, 166, .12), transparent 34%),
+                linear-gradient(135deg, #f4f6f8 0%, #eef2f7 100%);
+        }
+
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+        }
+
+        .login-shell {
+            width: min(960px, 100%);
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #e1e6ec;
+            border-radius: 20px;
+            box-shadow: 0 18px 50px rgba(16, 24, 40, .10);
+        }
+
+        .login-intro {
+            position: relative;
+            padding: 56px 48px;
+            background: linear-gradient(145deg, #172033 0%, #2457a6 100%);
+            color: #fff;
+        }
+
+        .login-intro::after {
+            content: "";
+            position: absolute;
+            width: 230px;
+            height: 230px;
+            right: -80px;
+            bottom: -100px;
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: 50%;
+            box-shadow: 0 0 0 35px rgba(255,255,255,.04), 0 0 0 70px rgba(255,255,255,.025);
+        }
+
+        .login-brand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            margin-bottom: 28px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.18);
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .login-eyebrow {
+            margin: 0 0 10px;
+            color: rgba(255,255,255,.72);
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .login-intro h1 {
+            max-width: 390px;
+            margin: 0;
+            color: #fff;
+            font-size: 2.35rem;
+            line-height: 1.12;
+            letter-spacing: -.035em;
+        }
+
+        .login-intro p {
+            max-width: 390px;
+            margin: 18px 0 0;
+            color: rgba(255,255,255,.78);
+            line-height: 1.65;
+        }
+
+        .login-features {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 12px;
+            margin: 34px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .login-features li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,.9);
+            font-size: .9rem;
+        }
+
+        .login-features li::before {
+            content: "✓";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            flex: 0 0 22px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.14);
+            font-size: .75rem;
+        }
+
+        .login-form-area {
+            display: flex;
+            align-items: center;
+            padding: 48px;
+        }
+
+        .login-form-content {
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .login-form-content h2 {
+            margin: 0;
+            color: #172033;
+            font-size: 1.75rem;
+            letter-spacing: -.02em;
+        }
+
+        .login-form-subtitle {
+            margin: 8px 0 28px;
+            color: #667085;
+            line-height: 1.5;
+        }
+
+        .login-alert {
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            border: 1px solid #f3c7c3;
+            border-radius: 9px;
+            background: #fef3f2;
+            color: #b42318;
+            font-size: .9rem;
+        }
+
+        .login-field {
+            margin-bottom: 18px;
+        }
+
+        .login-field label {
+            display: block;
+            margin-bottom: 7px;
+            color: #374151;
+            font-size: .9rem;
+            font-weight: 700;
+        }
+
+        .login-field input {
+            min-height: 46px;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .login-field input:focus {
+            outline: none;
+            border-color: #2457a6;
+            box-shadow: 0 0 0 3px rgba(36,87,166,.12);
+        }
+
+        .login-submit {
+            width: 100%;
+            min-height: 48px;
+            margin-top: 4px;
+            border-radius: 9px;
+            font-size: .95rem;
+        }
+
+        .login-footer {
+            margin: 24px 0 0;
+            color: #98a2b3;
+            font-size: .78rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @media (max-width: 760px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .login-intro {
+                padding: 34px 30px;
+            }
+
+            .login-intro h1 {
+                font-size: 2rem;
+            }
+
+            .login-features {
+                display: none;
+            }
+
+            .login-form-area {
+                padding: 34px 30px 38px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .login-page {
+                padding: 16px;
+            }
+
+            .login-intro,
+            .login-form-area {
+                padding-left: 22px;
+                padding-right: 22px;
+            }
+
+            .login-intro h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="login-page">
+        <section class="login-shell" aria-label="Acesso ao sistema">
+            <div class="login-intro">
+                <div class="login-brand" aria-hidden="true">GP</div>
+                <p class="login-eyebrow">Gestão de Processos</p>
+                <h1>Organização jurídica em um só lugar.</h1>
+                <p>
+                    Acompanhe clientes, processos, prazos e movimentações
+                    com uma visão clara do trabalho do escritório.
+                </p>
+
+                <ul class="login-features">
+                    <li>Gestão de clientes e processos</li>
+                    <li>Acompanhamento de prazos</li>
+                    <li>Monitoramento de movimentações</li>
+                </ul>
+            </div>
+
+            <div class="login-form-area">
+                <div class="login-form-content">
+                    <h2>Bem-vindo de volta</h2>
+                    <p class="login-form-subtitle">
+                        Entre com suas credenciais para acessar o painel.
+                    </p>
+
+                    {% with messages = get_flashed_messages() %}
+                        {% for message in messages %}
+                            <div class="login-alert" role="alert">{{ message }}</div>
+                        {% endfor %}
+                    {% endwith %}
+
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="login-field">
+                            <label for="username">Usuário</label>
+                            <input
+                                id="username"
+                                name="username"
+                                autocomplete="username"
+                                required
+                                autofocus
+                            >
+                        </div>
+
+                        <div class="login-field">
+                            <label for="password">Senha</label>
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                autocomplete="current-password"
+                                required
+                            >
+                        </div>
+
+                        <button class="login-submit" type="submit">Entrar no sistema</button>
+                    </form>
+
+                    <p class="login-footer">
+                        Acesso restrito a usuários autorizados.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
