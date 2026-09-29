@@ -1,14 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Excluir prazo | Gestão de Processos</title></head>
-<body>
-<a href="{{ url_for('prazos.detail', pk=prazo.id) }}">Voltar</a>
-<h1>Excluir prazo</h1>
-<p>Tem certeza que deseja excluir o prazo <strong>{{ prazo.titulo }}</strong>?</p>
-<p>O prazo do processo {{ prazo.processo.numero_cnj }} será removido.</p>
-<form method="post">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-<button type="submit">Confirmar exclusão</button>
-</form>
-</body>
-</html>
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Excluir prazo | Gestão de Processos</title><link rel="stylesheet" href="{{ url_for('static', filename='processos/css/app.css') }}"></head>
+<body><main class="page"><section class="card confirmation"><a class="back" href="{{ url_for('prazos.detail',pk=prazo.id) }}">← Voltar ao prazo</a><h1>Excluir prazo</h1><p>Tem certeza que deseja excluir o prazo <strong>{{ prazo.titulo }}</strong>?</p><p class="muted">O prazo do processo {{ prazo.processo.numero_cnj }} será removido permanentemente.</p><div class="actions"><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="button danger" type="submit">Confirmar exclusão</button></form><a class="button secondary" href="{{ url_for('prazos.detail',pk=prazo.id) }}">Cancelar</a></div></section></main></body></html>
