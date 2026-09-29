@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -92,7 +92,10 @@ def create():
 @processos_bp.route("/<int:pk>/editar/", methods=["GET", "POST"])
 @login_required
 def update(pk):
-    return form(db.get_or_404(Processo, pk))
+    processo = db.session.get(Processo, pk)
+    if processo is None:
+        abort(404)
+    return form(processo)
 
 
 def form(processo=None):
@@ -190,7 +193,9 @@ def form(processo=None):
 @processos_bp.route("/<int:pk>/excluir/", methods=["GET", "POST"])
 @login_required
 def delete(pk):
-    processo = db.get_or_404(Processo, pk)
+    processo = db.session.get(Processo, pk)
+    if processo is None:
+        abort(404)
 
     if request.method == "POST":
         db.session.delete(processo)
@@ -207,7 +212,9 @@ def delete(pk):
 @processos_bp.post("/<int:pk>/atualizar-movimentacoes/")
 @login_required
 def atualizar_movimentacoes(pk):
-    processo = db.get_or_404(Processo, pk)
+    processo = db.session.get(Processo, pk)
+    if processo is None:
+        abort(404)
     resultado = verificar_movimentacao_processo(processo)
 
     if resultado["erro"]:
