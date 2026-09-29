@@ -98,6 +98,7 @@ def configure_logging(app):
 def register_error_handlers(app):
     @app.errorhandler(403)
     def forbidden(error):
+        app.logger.warning("Acesso negado: caminho=%s", getattr(error, "description", "desconhecido"))
         return render_template(
             "errors/403.html",
             codigo=403,
@@ -107,6 +108,7 @@ def register_error_handlers(app):
 
     @app.errorhandler(404)
     def not_found(error):
+        app.logger.info("Página não encontrada: %s", getattr(error, "description", "desconhecido"))
         return render_template(
             "errors/404.html",
             codigo=404,
@@ -116,6 +118,7 @@ def register_error_handlers(app):
 
     @app.errorhandler(500)
     def internal_server_error(error):
+        app.logger.exception("Erro interno não tratado na aplicação")
         db.session.rollback()
         return render_template(
             "errors/500.html",
