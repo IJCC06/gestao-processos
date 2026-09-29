@@ -1,14 +1,13 @@
 import os
-from datetime import timedelta
 
 from dotenv import load_dotenv
-from flask import Flask, flash, render_template, redirect, url_for
-from flask_login import LoginManager, current_user, login_required
+from flask import Flask
+from flask_login import LoginManager, current_user
 from flask_wtf import CSRFProtect
 
 from config.settings import Config
 from processos.extensions import db
-from processos.models import Movimentacao, Prazo, Processo, Cliente, Usuario
+from processos.models import Usuario
 from processos.services.movimentacoes import verificar_movimentacoes
 from processos.routes import (
     auth_bp,
@@ -16,6 +15,7 @@ from processos.routes import (
     processos_bp,
     prazos_bp,
     notificacoes_bp,
+    dashboard_bp,
 )
 
 load_dotenv()
@@ -60,46 +60,9 @@ def register_routes(app):
     def inject_helpers():
         return {"current_user": current_user}
 
-    @app.get("/")
-    @login_required
-    def dashboard():
-        hoje = Config.local_date()
-        prazos = Prazo.query.filter_by(
-            status=Prazo.Status.PENDENTE
-        ).all()
-
-        prazos_vencidos = sorted(
-            [p for p in prazos if p.data_vencimento < hoje],
-            key=lambda p: (p.data_vencimento, p.titulo),
-        )
-        prazos_proximos = sorted(
-            [
-                p
-                for p in prazos
-                if hoje <= p.data_vencimento <= hoje + timedelta(days=7)
-            ],
-            key=lambda p: (p.data_vencimento, p.titulo),
-        )
-
-        return render_template(
-            "processos/dashboard.html",
-            total_clientes=Cliente.query.count(),
-            total_processos=Processo.query.count(),
-            processos_ativos=Processo.query.filter_by(
-                status=Processo.Status.ATIVO
-            ).count(),
-            alertas_pendentes=Processo.query.filter_by(
-                alerta_pendente=True
-            ).count(),
-            prazos_vencidos=prazos_vencidos,
-            prazos_proximos=prazos_proximos,
-            ultimas_movimentacoes=Movimentacao.query.order_by(
-                Movimentacao.data.desc()
-            ).limit(10).all(),
-        )
-
 
 def register_blueprints(app):
+    app.register_blueprint(dashboard_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(clientes_bp)
     app.register_blueprint(processos_bp)
