@@ -53,11 +53,11 @@ def list():
     status = request.args.get("status", "").strip()
     area = request.args.get("area", "").strip()
 
-    consulta = Processo.query.order_by(Processo.criado_em.desc())
+    consulta = db.select(Processo).order_by(Processo.criado_em.desc())
 
     if busca:
         termo = f"%{busca}%"
-        consulta = consulta.filter(
+        consulta = consulta.where(
             or_(
                 Processo.numero_cnj.ilike(termo),
                 Processo.tribunal.ilike(termo),
@@ -66,14 +66,14 @@ def list():
         )
 
     if status in Processo.Status.values():
-        consulta = consulta.filter(Processo.status == status)
+        consulta = consulta.where(Processo.status == status)
 
     if area in Processo.Area.values():
-        consulta = consulta.filter(Processo.area == area)
+        consulta = consulta.where(Processo.area == area)
 
     pagina = request.args.get("page", 1, type=int)
     pagina = max(pagina, 1)
-    processos = db.paginate(db.select(Processo).filter(consulta.whereclause).order_by(Processo.criado_em.desc()), page=pagina, per_page=20, error_out=False)
+    processos = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/processos/list.html",
