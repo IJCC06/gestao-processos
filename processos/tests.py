@@ -413,6 +413,97 @@ class FluxosPrincipaisTests(unittest.TestCase):
                 Prazo.query.filter_by(titulo="Prazo de manifestacao").first()
             )
 
+    def test_crud_completo_de_prazo(self):
+        self.login()
+
+        resposta = self.client.get("/prazos/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Prazos", resposta.data)
+
+        resposta = self.client.post(
+            "/prazos/novo/",
+            data={
+                "processo": self.processo_id,
+                "titulo": "Prazo inicial",
+                "data_inicio": "2026-09-20",
+                "data_vencimento": "2026-09-30",
+                "status": Prazo.Status.PENDENTE,
+                "observacoes": "Observacao inicial",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+        prazo_id = int(resposta.location.rstrip("/").split("/")[-1])
+
+        resposta = self.client.get(f"/prazos/{prazo_id}/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Prazo inicial", resposta.data)
+        self.assertIn(b"Observacao inicial", resposta.data)
+
+        resposta = self.client.post(
+            f"/prazos/{prazo_id}/editar/",
+            data={
+                "processo": self.processo_id,
+                "titulo": "Prazo atualizado",
+                "data_inicio": "2026-09-21",
+                "data_vencimento": "2026-10-05",
+                "status": Prazo.Status.CONCLUIDO,
+                "observacoes": "Observacao atualizada",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            prazo = db.session.get(Prazo, prazo_id)
+            self.assertEqual(prazo.titulo, "Prazo atualizado")
+            self.assertEqual(prazo.data_vencimento.isoformat(), "2026-10-05")
+            self.assertEqual(prazo.status, Prazo.Status.CONCLUIDO)
+            self.assertEqual(prazo.observacoes, "Observacao atualizada")
+
+        resposta = self.client.get(f"/prazos/{prazo_id}/editar/")
+        self.assertEqual(resposta.status_code, 200)
+
+        resposta = self.client.get(f"/prazos/{prazo_id}/excluir/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Confirmar exclusao", resposta.data)
+
+        resposta = self.client.post(f"/prazos/{prazo_id}/excluir/", follow_redirects=True)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Prazo exclu", resposta.data)
+
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Prazo, prazo_id))
+
+    def test_criacao_de_prazo_rejeita_datas_e_status_invalidos(self):
+        self.login()
+
+        resposta = self.client.post(
+            "/prazos/novo/",
+            data={
+                "processo": self.processo_id,
+                "titulo": "Prazo invalido",
+                "data_inicio": "2026-10-01",
+                "data_vencimento": "2026-09-30",
+                "status": Prazo.Status.PENDENTE,
+            },
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("não pode ser anterior".encode("utf-8"), resposta.data)
+
+        resposta = self.client.post(
+            "/prazos/novo/",
+            data={
+                "processo": self.processo_id,
+                "titulo": "Prazo com status invalido",
+                "data_vencimento": "2026-09-30",
+                "status": "inexistente",
+            },
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Selecione um status valido.", resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Prazo.query.count(), 0)
+
     def test_notificacoes_separam_prazos(self):
         with self.app.app_context():
             hoje = Config.local_date()
