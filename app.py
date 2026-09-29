@@ -6,10 +6,9 @@ import click
 from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_login import LoginManager, current_user
-from werkzeug.exceptions import HTTPException
 from flask_wtf import CSRFProtect
 
-from config.settings import Config
+from config.settings import Config, DATA_DIR
 from processos.extensions import db, migrate
 from processos.models import Usuario
 from processos.services.auditoria import registrar_auditoria
@@ -26,7 +25,12 @@ from processos.routes import (
     sistema_bp,
 )
 
-load_dotenv()
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+ENV_FILE = DATA_DIR / ".env"
+if ENV_FILE.exists():
+    load_dotenv(ENV_FILE)
+else:
+    load_dotenv()
 
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
@@ -95,11 +99,13 @@ def configure_logging(app):
     logging.getLogger("werkzeug").setLevel(level)
 
 
-
 def register_error_handlers(app):
     @app.errorhandler(403)
     def forbidden(error):
-        app.logger.warning("Acesso negado: caminho=%s", getattr(error, "description", "desconhecido"))
+        app.logger.warning(
+            "Acesso negado: caminho=%s",
+            getattr(error, "description", "desconhecido"),
+        )
         return render_template(
             "errors/403.html",
             codigo=403,
@@ -109,7 +115,10 @@ def register_error_handlers(app):
 
     @app.errorhandler(404)
     def not_found(error):
-        app.logger.info("Página não encontrada: %s", getattr(error, "description", "desconhecido"))
+        app.logger.info(
+            "Página não encontrada: %s",
+            getattr(error, "description", "desconhecido"),
+        )
         return render_template(
             "errors/404.html",
             codigo=404,
@@ -125,7 +134,10 @@ def register_error_handlers(app):
             "errors/500.html",
             codigo=500,
             titulo="Erro interno",
-            mensagem="Ocorreu um erro inesperado. Tente novamente. Se o problema persistir, verifique os logs do sistema.",
+            mensagem=(
+                "Ocorreu um erro inesperado. Tente novamente. "
+                "Se o problema persistir, verifique os logs do sistema."
+            ),
         ), 500
 
 
@@ -151,8 +163,6 @@ def register_cli(app):
     @app.cli.command("tornar-admin")
     def tornar_admin_cli():
         """Concede permissão de administrador a um usuário existente."""
-        import click
-
         username = click.prompt("Nome de usuário")
         with app.app_context():
             usuario = Usuario.query.filter_by(username=username.strip()).first()
@@ -162,7 +172,12 @@ def register_cli(app):
             usuario.is_admin = True
             usuario.is_active = True
             db.session.commit()
-            registrar_auditoria("PERMISSAO", "Usuario", usuario.id, "Usuário promovido a administrador via CLI.")
+            registrar_auditoria(
+                "PERMISSAO",
+                "Usuario",
+                usuario.id,
+                "Usuário promovido a administrador via CLI.",
+            )
             db.session.commit()
             click.echo(f"Usuário '{usuario.username}' agora é administrador.")
 
@@ -187,7 +202,7 @@ def register_cli(app):
         database_path = db.engine.url.database
         backup_dir = os.environ.get(
             "BACKUP_DIR",
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups"),
+            os.path.join(str(DATA_DIR), "backups"),
         )
 
         try:
