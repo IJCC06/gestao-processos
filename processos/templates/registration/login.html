@@ -267,6 +267,9 @@
                     {% endwith %}
 
                     <form method="post">
+                        {% if request.args.get("next") %}
+                            <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+                        {% endif %}
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <div class="login-field">
