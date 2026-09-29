@@ -1,1 +1,59 @@
-<html><body><a href="{{ url_for('processo_detail',pk=processo.id) if processo else url_for('processo_list') }}">Voltar</a><h1>{{ titulo }}</h1><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><p>Cliente<select name="cliente" required>{% for c in clientes %}<option value="{{ c.id }}" {% if processo and processo.cliente_id==c.id %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}</select></p><p>Número CNJ<input name="numero_cnj" value="{{ processo.numero_cnj if processo else '' }}" required></p><p>Área<select name="area"><option value="civel">Cível</option><option value="trabalhista">Trabalhista</option><option value="previdenciario">Previdenciário</option></select></p><p>Tribunal<input name="tribunal" value="{{ processo.tribunal if processo else '' }}"></p><p>Alias DataJud<input name="tribunal_alias" value="{{ processo.tribunal_alias if processo else '' }}"></p><p>Fase<input name="fase" value="{{ processo.fase if processo else '' }}"></p><p>Status<select name="status"><option value="ativo">Ativo</option><option value="suspenso">Suspenso</option><option value="arquivado">Arquivado</option></select></p><p>Valor da causa<input name="valor_causa" type="number" step="0.01" value="{{ processo.valor_causa if processo else '' }}"></p><p>Honorários<input name="honorarios" type="number" step="0.01" value="{{ processo.honorarios if processo else '' }}"></p><button>Salvar</button></form></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} | Gestão de Processos</title>
+</head>
+<body>
+    <a href="{{ url_for('processos.detail', pk=processo.id) if processo else url_for('processos.list') }}">Voltar</a>
+    <h1>{{ titulo }}</h1>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <p>
+            <label for="cliente">Cliente</label>
+            <select id="cliente" name="cliente" required>
+                {% for c in clientes %}
+                    <option value="{{ c.id }}" {% if processo and processo.cliente_id == c.id %}selected{% endif %}>
+                        {{ c.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </p>
+
+        <p>
+            <label for="numero_cnj">Número CNJ</label>
+            <input id="numero_cnj" name="numero_cnj" value="{{ processo.numero_cnj if processo else '' }}" required>
+        </p>
+
+        <p>
+            <label for="area">Área</label>
+            <select id="area" name="area">
+                {% for value, label in [("civel", "Cível"), ("trabalhista", "Trabalhista"), ("previdenciario", "Previdenciário")] %}
+                    <option value="{{ value }}" {% if processo and processo.area == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </p>
+
+        <p><label for="tribunal">Tribunal</label><input id="tribunal" name="tribunal" value="{{ processo.tribunal if processo else '' }}"></p>
+        <p><label for="tribunal_alias">Alias DataJud</label><input id="tribunal_alias" name="tribunal_alias" value="{{ processo.tribunal_alias if processo else '' }}"></p>
+        <p><label for="fase">Fase</label><input id="fase" name="fase" value="{{ processo.fase if processo else '' }}"></p>
+
+        <p>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                {% for value, label in [("ativo", "Ativo"), ("suspenso", "Suspenso"), ("arquivado", "Arquivado")] %}
+                    <option value="{{ value }}" {% if processo and processo.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </p>
+
+        <p><label for="valor_causa">Valor da causa</label><input id="valor_causa" name="valor_causa" type="number" step="0.01" value="{{ processo.valor_causa if processo else '' }}"></p>
+        <p><label for="honorarios">Honorários</label><input id="honorarios" name="honorarios" type="number" step="0.01" value="{{ processo.honorarios if processo else '' }}"></p>
+
+        <button type="submit">Salvar</button>
+    </form>
+</body>
+</html>
