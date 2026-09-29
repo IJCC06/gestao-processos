@@ -107,7 +107,7 @@ def list():
 
     pagina = request.args.get("page", 1, type=int)
     pagina = max(pagina, 1)
-    prazos = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
+    prazos = db.paginate(db.select(Prazo).filter(consulta.whereclause).order_by(Prazo.data_vencimento, Prazo.titulo), page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/prazos/list.html",
