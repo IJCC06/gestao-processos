@@ -796,5 +796,124 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.assertEqual(Prazo.query.count(), 0)
 
 
+    def test_lista_de_prazos_exibe_dados_e_filtro_de_status(self):
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            db.session.add_all([
+                Prazo(
+                    processo=processo,
+                    titulo="Prazo pendente",
+                    data_vencimento=Config.local_date() + timedelta(days=3),
+                    status=Prazo.Status.PENDENTE,
+                ),
+                Prazo(
+                    processo=processo,
+                    titulo="Prazo concluido",
+                    data_vencimento=Config.local_date() - timedelta(days=2),
+                    status=Prazo.Status.CONCLUIDO,
+                ),
+            ])
+            db.session.commit()
+
+        self.login()
+        resposta = self.client.get("/prazos/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Prazo pendente", resposta.data)
+        self.assertIn(b"Prazo concluido", resposta.data)
+        self.assertIn(b"Novo prazo", resposta.data)
+
+        resposta = self.client.get(
+            "/prazos/",
+            query_string={"status": Prazo.Status.PENDENTE},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Prazo pendente", resposta.data)
+        self.assertNotIn(b"Prazo concluido", resposta.data)
+
+    @patch("processos.services.movimentacoes.consultar_movimentacoes")
+    def test_nova_movimentacao_datajud_fica_nao_lida(self, consultar):
+        consultar.return_value = [
+            {
+                "dataHora": "2026-09-23T12:00:00Z",
+                "nome": "Nova movimentacao",
+            }
+        ]
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            resultado = verificar_movimentacao_processo(processo)
+            db.session.commit()
+
+            movimento = Movimentacao.query.one()
+            self.assertEqual(resultado["total_novas"], 1)
+            self.assertFalse(movimento.lida)
+
+    def test_notificacoes_exibem_apenas_movimentacoes_nao_lidas(self):
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            db.session.add_all([
+                Movimentacao(
+                    processo=processo,
+                    data=datetime.now(timezone.utc),
+                    descricao="Movimentacao nao lida",
+                    origem="datajud",
+                    lida=False,
+                ),
+                Movimentacao(
+                    processo=processo,
+                    data=datetime.now(timezone.utc),
+                    descricao="Movimentacao ja lida",
+                    origem="datajud",
+                    lida=True,
+                ),
+            ])
+            db.session.commit()
+
+        self.login()
+        resposta = self.client.get("/notificacoes/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Movimentacao nao lida", resposta.data)
+        self.assertNotIn(b"Movimentacao ja lida", resposta.data)
+
+    def test_marcar_processo_como_visto_marca_movimentacoes_como_lidas(self):
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            processo.alerta_pendente = True
+            db.session.add_all([
+                Movimentacao(
+                    processo=processo,
+                    data=datetime.now(timezone.utc),
+                    descricao="Movimentacao 1",
+                    origem="datajud",
+                    lida=False,
+                ),
+                Movimentacao(
+                    processo=processo,
+                    data=datetime.now(timezone.utc),
+                    descricao="Movimentacao 2",
+                    origem="datajud",
+                    lida=False,
+                ),
+            ])
+            db.session.commit()
+
+        self.login()
+        resposta = self.client.post(
+            f"/notificacoes/processos/{self.processo_id}/limpar/",
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            movimentos = Movimentacao.query.filter_by(processo_id=self.processo_id).all()
+            self.assertFalse(processo.alerta_pendente)
+            self.assertEqual(len(movimentos), 2)
+            self.assertTrue(all(m.lida for m in movimentos))
+
+        resposta = self.client.get("/notificacoes/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Nenhuma movimentacao nova pendente", resposta.data)
+
+
 if __name__ == "__main__":
     unittest.main()
