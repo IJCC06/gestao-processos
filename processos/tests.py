@@ -108,15 +108,15 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.login()
         resposta = self.client.get("/rota-que-nao-existe/")
         self.assertEqual(resposta.status_code, 404)
-        self.assertIn(b"Pagina nao encontrada", resposta.data)
+        self.assertIn("Página não encontrada".encode("utf-8"), resposta.data)
         self.assertIn(b"Voltar ao painel", resposta.data)
 
     def test_pagina_403_personalizada(self):
         self.login()
         resposta = self.client.get("/admin/")
         self.assertEqual(resposta.status_code, 403)
-        self.assertIn(b"Acesso nao autorizado", resposta.data)
-        self.assertIn(b"Voce nao tem permissao", resposta.data)
+        self.assertIn("Acesso não autorizado".encode("utf-8"), resposta.data)
+        self.assertIn("Você não tem permissão".encode("utf-8"), resposta.data)
 
     def test_pagina_500_personalizada(self):
         self.login()
