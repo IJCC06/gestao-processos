@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy.exc import IntegrityError
 
@@ -68,7 +68,10 @@ def create():
 @clientes_bp.route("/<int:pk>/editar/", methods=["GET", "POST"])
 @login_required
 def update(pk):
-    return form(db.get_or_404(Cliente, pk))
+    cliente = db.session.get(Cliente, pk)
+    if cliente is None:
+        abort(404)
+    return form(cliente)
 
 
 def form(cliente=None):
@@ -139,14 +142,16 @@ def form(cliente=None):
 def detail(pk):
     return render_template(
         "processos/clientes/detail.html",
-        cliente=db.get_or_404(Cliente, pk),
+        cliente=db.session.get(Cliente, pk),
     )
 
 
 @clientes_bp.route("/<int:pk>/excluir/", methods=["GET", "POST"])
 @login_required
 def delete(pk):
-    cliente = db.get_or_404(Cliente, pk)
+    cliente = db.session.get(Cliente, pk)
+    if cliente is None:
+        abort(404)
 
     if request.method == "POST":
         if cliente.processos:
