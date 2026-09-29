@@ -128,7 +128,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn(b"Proximo", resposta.data)
         self.assertIn(b"Prazos vencidos", resposta.data)
         self.assertIn("Próximos 7 dias".encode("utf-8"), resposta.data)
-        self.assertIn(b"Movimenta", resposta.data)
+        self.assertIn(b"movimenta", resposta.data)
 
     def test_criacao_de_cliente(self):
         self.login()
