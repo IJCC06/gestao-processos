@@ -15,6 +15,7 @@ echo [1/3] Instalando ferramentas de build...
 if errorlevel 1 goto :erro
 
 echo [2/3] Gerando executavel...
+
 rmdir /s /q build 2>nul
 rmdir /s /q dist 2>nul
 "venv\Scripts\python.exe" -m PyInstaller --clean --noconfirm GestaoProcessos.spec
@@ -22,6 +23,7 @@ if errorlevel 1 goto :erro
 
 if not exist "dist\GestaoProcessos\GestaoProcessos.exe" (
     echo ERRO: executavel nao foi gerado.
+    echo Verifique a pasta dist\GestaoProcessos.
     goto :erro
 )
 
