@@ -5,3 +5,5 @@
 
 
 .pagination{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0;flex-wrap:wrap}.pagination-info{color:#667085;font-size:.88rem}.pagination-links{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.pagination-number,.pagination-current,.pagination-ellipsis{min-width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-weight:700}.pagination-number{border:1px solid #d0d5dd;background:#fff;color:#344054}.pagination-number:hover{text-decoration:none;border-color:#98a2b3;background:#f8fafc}.pagination-current{background:#172033;color:#fff}.pagination-ellipsis{color:#667085}@media(max-width:600px){.pagination{align-items:stretch;flex-direction:column}.pagination-links{width:100%}.pagination-links .button{flex:1}}
+
+.error-page{max-width:680px;margin:90px auto;text-align:center;padding:44px 30px}.error-code{margin:0;color:#667085;font-size:.9rem;font-weight:800;letter-spacing:.12em}.error-page h1{margin:10px 0 12px;font-size:2rem}.error-message{margin:0 auto 26px;max-width:520px;color:#667085;line-height:1.6}.error-page .actions{justify-content:center}
