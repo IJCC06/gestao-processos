@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 from processos.extensions import db
@@ -8,15 +8,25 @@ from processos.services.datajud import DataJudError, consultar_movimentacoes
 
 def verificar_movimentacao_processo(processo):
     """Consulta um processo no DataJud e grava apenas movimentações novas."""
+    agora = datetime.now(timezone.utc)
+    processo.datajud_ultima_consulta_em = agora
+
     if not processo.tribunal_alias:
-        return {"total_novas": 0, "erro": "Tribunal/alias DataJud não configurado."}
+        processo.datajud_ultimo_status = "erro"
+        processo.datajud_ultimo_erro = "Tribunal/alias DataJud não configurado."
+        return {"total_novas": 0, "erro": processo.datajud_ultimo_erro}
 
     try:
         movimentos = consultar_movimentacoes(
             processo.numero_cnj, processo.tribunal_alias
         )
     except DataJudError as exc:
+        processo.datajud_ultimo_status = "erro"
+        processo.datajud_ultimo_erro = str(exc)
         return {"total_novas": 0, "erro": str(exc)}
+
+    processo.datajud_ultimo_status = "sucesso"
+    processo.datajud_ultimo_erro = None
 
     novas = 0
     for mov in movimentos:
