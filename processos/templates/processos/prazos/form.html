@@ -1,1 +1,18 @@
-<html><body><a href="{{ url_for('prazo_list') }}">Prazos</a><h1>{{ titulo }}</h1><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><p>Processo<select name="processo" required>{% for p in processos %}<option value="{{ p.id }}" {% if (prazo and prazo.processo_id==p.id) or (processo_id==p.id) %}selected{% endif %}>{{ p.numero_cnj }}</option>{% endfor %}</select></p><p>Título<input name="titulo" value="{{ prazo.titulo if prazo else '' }}" required></p><p>Data inicial<input type="date" name="data_inicio" value="{{ prazo.data_inicio.isoformat() if prazo and prazo.data_inicio else '' }}"></p><p>Vencimento<input type="date" name="data_vencimento" value="{{ prazo.data_vencimento.isoformat() if prazo else '' }}" required></p><p>Status<select name="status"><option value="pendente">Pendente</option><option value="concluido">Concluído</option><option value="cancelado">Cancelado</option></select></p><p>Observações<textarea name="observacoes">{{ prazo.observacoes if prazo else '' }}</textarea></p><button>Salvar</button></form></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{{ titulo }} | Gestão de Processos</title></head>
+<body>
+<a href="{{ url_for('prazos.list') }}">Prazos</a>
+<h1>{{ titulo }}</h1>
+{% with mensagens = get_flashed_messages(with_categories=true) %}{% for categoria, mensagem in mensagens %}<p>{{ mensagem }}</p>{% endfor %}{% endwith %}
+<form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<p><label for="processo">Processo</label><select id="processo" name="processo" required>{% for p in processos %}<option value="{{ p.id }}" {% if valores and valores.processo|string == p.id|string %}selected{% elif not valores and ((prazo and prazo.processo_id == p.id) or (processo_id == p.id)) %}selected{% endif %}>{{ p.numero_cnj }} — {{ p.cliente.nome }}</option>{% endfor %}</select></p>
+<p><label for="titulo">Título</label><input id="titulo" name="titulo" value="{{ valores.titulo if valores else (prazo.titulo if prazo else '') }}" required></p>
+<p><label for="data_inicio">Data inicial</label><input id="data_inicio" type="date" name="data_inicio" value="{{ valores.data_inicio if valores else (prazo.data_inicio.isoformat() if prazo and prazo.data_inicio else '') }}"></p>
+<p><label for="data_vencimento">Vencimento</label><input id="data_vencimento" type="date" name="data_vencimento" value="{{ valores.data_vencimento if valores else (prazo.data_vencimento.isoformat() if prazo else '') }}" required></p>
+<p><label for="status">Status</label><select id="status" name="status" required>{% for value, label in status_choices %}<option value="{{ value }}" {% if valores and valores.status == value %}selected{% elif not valores and prazo and prazo.status == value %}selected{% elif not valores and not prazo and value == 'pendente' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></p>
+<p><label for="observacoes">Observações</label><textarea id="observacoes" name="observacoes">{{ valores.observacoes if valores else (prazo.observacoes if prazo else '') }}</textarea></p>
+<button type="submit">Salvar</button>
+</form>
+</body></html>
