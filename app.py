@@ -23,6 +23,7 @@ from processos.routes import (
     dashboard_bp,
     admin_bp,
     auditoria_bp,
+    sistema_bp,
 )
 
 load_dotenv()
@@ -143,6 +144,7 @@ def register_blueprints(app):
     app.register_blueprint(notificacoes_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(auditoria_bp)
+    app.register_blueprint(sistema_bp)
 
 
 def register_cli(app):
