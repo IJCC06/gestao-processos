@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Administração | Gestão de Processos{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='processos/css/app.css') }}">
+</head>
+<body>
+  <main class="page admin-page">
+    <header class="admin-header">
+      <div>
+        <p class="dashboard-eyebrow">Administração</p>
+        <h1>{% block heading %}Painel administrativo{% endblock %}</h1>
+        <p class="dashboard-subtitle">Gerencie usuários e acompanhe a situação geral do sistema.</p>
+      </div>
+      <div class="actions">
+        <a class="button secondary" href="{{ url_for('dashboard.index') }}">Voltar ao painel</a>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="button secondary" type="submit">Sair</button>
+        </form>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <nav class="admin-nav" aria-label="Administração">
+      <a href="{{ url_for('admin.index') }}">Visão geral</a>
+      <a href="{{ url_for('admin.usuarios') }}">Usuários</a>
+    </nav>
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
