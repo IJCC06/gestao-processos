@@ -975,5 +975,104 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn("Nenhuma movimentação nova pendente.".encode("utf-8"), resposta.data)
 
 
+
+    def admin_login(self):
+        with self.app.app_context():
+            usuario = db.session.get(Usuario, self.usuario_id)
+            usuario.is_admin = True
+            db.session.commit()
+        return self.login()
+
+    def test_painel_admin_exige_permissao_de_administrador(self):
+        self.login()
+        resposta = self.client.get("/admin/")
+        self.assertEqual(resposta.status_code, 403)
+
+    def test_painel_admin_exibe_resumo(self):
+        self.admin_login()
+        resposta = self.client.get("/admin/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Painel administrativo", resposta.data)
+        self.assertIn("Usuários".encode("utf-8"), resposta.data)
+
+    def test_admin_pode_criar_usuario(self):
+        self.admin_login()
+        resposta = self.client.post(
+            "/admin/usuarios/novo/",
+            data={
+                "username": "advogado",
+                "password": "senha-segura-123",
+                "password_confirmation": "senha-segura-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            usuario = Usuario.query.filter_by(username="advogado").first()
+            self.assertIsNotNone(usuario)
+            self.assertFalse(usuario.is_admin)
+            self.assertTrue(usuario.is_active)
+            self.assertTrue(usuario.check_password("senha-segura-123"))
+
+    def test_admin_pode_desativar_e_reativar_usuario(self):
+        self.admin_login()
+        with self.app.app_context():
+            usuario = Usuario(username="temporario")
+            usuario.set_password("senha-segura-123")
+            db.session.add(usuario)
+            db.session.commit()
+            usuario_id = usuario.id
+
+        resposta = self.client.post(f"/admin/usuarios/{usuario_id}/alternar-status/")
+        self.assertEqual(resposta.status_code, 302)
+        with self.app.app_context():
+            self.assertFalse(db.session.get(Usuario, usuario_id).is_active)
+
+        resposta = self.client.post(f"/admin/usuarios/{usuario_id}/alternar-status/")
+        self.assertEqual(resposta.status_code, 302)
+        with self.app.app_context():
+            self.assertTrue(db.session.get(Usuario, usuario_id).is_active)
+
+    def test_admin_nao_pode_desativar_a_propria_conta(self):
+        self.admin_login()
+        resposta = self.client.post(
+            f"/admin/usuarios/{self.usuario_id}/alternar-status/"
+        )
+        self.assertEqual(resposta.status_code, 302)
+        with self.app.app_context():
+            self.assertTrue(db.session.get(Usuario, self.usuario_id).is_active)
+
+    def test_admin_pode_redefinir_senha(self):
+        self.admin_login()
+        resposta = self.client.post(
+            f"/admin/usuarios/{self.usuario_id}/senha/",
+            data={
+                "password": "nova-senha-123",
+                "password_confirmation": "nova-senha-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+        with self.app.app_context():
+            usuario = db.session.get(Usuario, self.usuario_id)
+            self.assertTrue(usuario.check_password("nova-senha-123"))
+
+    def test_login_rejeita_usuario_desativado(self):
+        with self.app.app_context():
+            usuario = db.session.get(Usuario, self.usuario_id)
+            usuario.is_active = False
+            db.session.commit()
+
+        resposta = self.client.post(
+            "/login/",
+            data={
+                "username": "teste",
+                "password": "senha-segura-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("desativada".encode("utf-8"), resposta.data)
+
+
+
 if __name__ == "__main__":
     unittest.main()
