@@ -65,7 +65,8 @@ def form(prazo=None):
         elif valores["status"] not in Prazo.Status.values():
             flash("Selecione um status válido.", "error")
         else:
-            if prazo is None:
+            novo_prazo = prazo is None
+            if novo_prazo:
                 prazo = Prazo()
 
             prazo.processo = processo
@@ -77,7 +78,7 @@ def form(prazo=None):
 
             db.session.add(prazo)
             db.session.commit()
-            registrar_auditoria("ALTERAR" if prazo.id else "CRIAR", "Prazo", prazo.id, f"Prazo salvo: {prazo.titulo}.")
+            registrar_auditoria("CRIAR" if novo_prazo else "ALTERAR", "Prazo", prazo.id, f"Prazo salvo: {prazo.titulo}.")
             db.session.commit()
             flash("Prazo salvo com sucesso.", "success")
             return redirect(url_for("prazos.detail", pk=prazo.id))
