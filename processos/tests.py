@@ -166,10 +166,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.login()
         resposta = self.client.post(
             "/clientes/novo/",
-            data={
-                "nome": "Outro Cliente",
-                "cpf_cnpj": "12345678901",
-            },
+            data={"nome": "Outro Cliente", "cpf_cnpj": "12345678901"},
         )
 
         self.assertEqual(resposta.status_code, 200)
@@ -280,10 +277,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
     def test_busca_e_filtros_de_processos(self):
         with self.app.app_context():
-            cliente = Cliente(
-                nome="Maria de Souza",
-                cpf_cnpj="98765432100",
-            )
+            cliente = Cliente(nome="Maria de Souza", cpf_cnpj="98765432100")
             processo_suspenso = Processo(
                 cliente=cliente,
                 numero_cnj="1111111-11.2026.8.01.0001",
@@ -305,29 +299,21 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         self.login()
 
-        resposta = self.client.get(
-            "/processos/", query_string={"q": "Maria de Souza"}
-        )
+        resposta = self.client.get("/processos/", query_string={"q": "Maria de Souza"})
         self.assertEqual(resposta.status_code, 200)
         self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
         self.assertIn(b"2222222-22.2026.8.02.0002", resposta.data)
         self.assertNotIn(b"0000000-00.2026.8.00.0000", resposta.data)
 
-        resposta = self.client.get(
-            "/processos/", query_string={"q": "TRT da 2"}
-        )
+        resposta = self.client.get("/processos/", query_string={"q": "TRT da 2"})
         self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
         self.assertNotIn(b"2222222-22.2026.8.02.0002", resposta.data)
 
-        resposta = self.client.get(
-            "/processos/", query_string={"status": Processo.Status.SUSPENSO}
-        )
+        resposta = self.client.get("/processos/", query_string={"status": Processo.Status.SUSPENSO})
         self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
         self.assertNotIn(b"0000000-00.2026.8.00.0000", resposta.data)
 
-        resposta = self.client.get(
-            "/processos/", query_string={"area": Processo.Area.PREVIDENCIARIO}
-        )
+        resposta = self.client.get("/processos/", query_string={"area": Processo.Area.PREVIDENCIARIO})
         self.assertIn(b"2222222-22.2026.8.02.0002", resposta.data)
         self.assertNotIn(b"1111111-11.2026.8.01.0001", resposta.data)
 
@@ -351,14 +337,14 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
             prazo = Prazo(
                 processo=processo,
-                titulo="Manifestação",
+                titulo="Manifestacao",
                 data_vencimento=Config.local_date() + timedelta(days=5),
                 status=Prazo.Status.PENDENTE,
             )
             movimento = Movimentacao(
                 processo=processo,
                 data=datetime.now(timezone.utc),
-                descricao="Intimação publicada",
+                descricao="Intimacao publicada",
                 origem="datajud",
             )
             db.session.add_all([prazo, movimento])
@@ -380,7 +366,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             "/prazos/novo/",
             data={
                 "processo": self.processo_id,
-                "titulo": "Prazo de manifestação",
+                "titulo": "Prazo de manifestacao",
                 "data_inicio": "2026-09-20",
                 "data_vencimento": "2026-09-30",
                 "status": Prazo.Status.PENDENTE,
@@ -391,7 +377,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         with self.app.app_context():
             self.assertIsNotNone(
-                Prazo.query.filter_by(titulo="Prazo de manifestação").first()
+                Prazo.query.filter_by(titulo="Prazo de manifestacao").first()
             )
 
     def test_notificacoes_separam_prazos(self):
@@ -400,16 +386,8 @@ class FluxosPrincipaisTests(unittest.TestCase):
             processo = db.session.get(Processo, self.processo_id)
             db.session.add_all(
                 [
-                    Prazo(
-                        processo=processo,
-                        titulo="Vencido",
-                        data_vencimento=hoje - timedelta(days=1),
-                    ),
-                    Prazo(
-                        processo=processo,
-                        titulo="Proximo",
-                        data_vencimento=hoje + timedelta(days=3),
-                    ),
+                    Prazo(processo=processo, titulo="Vencido", data_vencimento=hoje - timedelta(days=1)),
+                    Prazo(processo=processo, titulo="Proximo", data_vencimento=hoje + timedelta(days=3)),
                 ]
             )
             db.session.commit()
@@ -438,12 +416,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
     @patch("processos.services.movimentacoes.consultar_movimentacoes")
     def test_atualizacao_individual_datajud_cria_movimentacao(self, consultar):
-        consultar.return_value = [
-            {
-                "dataHora": "2026-09-23T12:00:00Z",
-                "nome": "Movimentação individual",
-            }
-        ]
+        consultar.return_value = [{"dataHora": "2026-09-23T12:00:00Z", "nome": "Movimentacao individual"}]
 
         with self.app.app_context():
             processo = db.session.get(Processo, self.processo_id)
@@ -459,14 +432,14 @@ class FluxosPrincipaisTests(unittest.TestCase):
     def test_atualizacao_individual_datajud_retorna_erro(self, consultar):
         from processos.services.datajud import DataJudError
 
-        consultar.side_effect = DataJudError("DataJud indisponível")
+        consultar.side_effect = DataJudError("DataJud indisponivel")
 
         with self.app.app_context():
             processo = db.session.get(Processo, self.processo_id)
             resultado = verificar_movimentacao_processo(processo)
 
             self.assertEqual(resultado["total_novas"], 0)
-            self.assertEqual(resultado["erro"], "DataJud indisponível")
+            self.assertEqual(resultado["erro"], "DataJud indisponivel")
             self.assertEqual(Movimentacao.query.count(), 0)
 
     @patch("processos.services.movimentacoes.consultar_movimentacoes")
@@ -484,12 +457,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
     @patch("processos.services.movimentacoes.consultar_movimentacoes")
     def test_verificacao_datajud_cria_movimentacao_nova(self, consultar):
-        consultar.return_value = [
-            {
-                "dataHora": "2026-09-23T12:00:00Z",
-                "nome": "Movimentação de teste",
-            }
-        ]
+        consultar.return_value = [{"dataHora": "2026-09-23T12:00:00Z", "nome": "Movimentacao de teste"}]
 
         with self.app.app_context():
             resultado = verificar_movimentacoes()
