@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configuração inicial | Gestão de Processos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='processos/css/app.css') }}">
+</head>
+<body>
+    <main class="page error-page">
+        <p class="error-code">GESTÃO DE PROCESSOS</p>
+        <h1>Configuração inicial</h1>
+        <p class="error-message">
+            Crie a conta do primeiro administrador para começar a usar o sistema.
+        </p>
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% for categoria, mensagem in mensagens %}
+                <div class="flash {{ categoria }}">{{ mensagem }}</div>
+            {% endfor %}
+        {% endwith %}
+        <form method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="username">Usuário</label>
+            <input id="username" name="username" type="text" minlength="3" required autofocus>
+            <label for="password">Senha</label>
+            <input id="password" name="password" type="password" minlength="8" required>
+            <label for="password_confirmation">Confirme a senha</label>
+            <input id="password_confirmation" name="password_confirmation" type="password" minlength="8" required>
+            <label for="datajud_api_key">Chave da API DataJud (opcional)</label>
+            <input id="datajud_api_key" name="datajud_api_key" type="password">
+            <button type="submit">Concluir configuração</button>
+        </form>
+    </main>
+</body>
+</html>
