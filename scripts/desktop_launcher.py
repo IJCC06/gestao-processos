@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import sys
 import threading
 import webbrowser
@@ -22,9 +23,33 @@ def _data_dir() -> Path:
     )
 
 
+def _prepare_environment() -> None:
+    data_dir = _data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    env_file = data_dir / ".env"
+
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip())
+
+    os.environ.setdefault("FLASK_SECRET_KEY", secrets.token_urlsafe(48))
+    os.environ.setdefault("FLASK_DEBUG", "False")
+
+    if not env_file.exists():
+        env_file.write_text(
+            f"FLASK_SECRET_KEY={os.environ['FLASK_SECRET_KEY']}\n"
+            "FLASK_DEBUG=False\n",
+            encoding="utf-8",
+        )
+
+
 def main() -> None:
     os.environ.setdefault("GESTAO_PROCESSOS_DATA_DIR", str(_data_dir()))
-    os.environ.setdefault("FLASK_DEBUG", "False")
+    _prepare_environment()
     os.chdir(APP_DIR)
 
     from flask_migrate import upgrade
