@@ -136,7 +136,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             "/clientes/novo/",
             data={
                 "nome": "Novo Cliente",
-                "cpf_cnpj": "529.982.247-25",
+                "cpf_cnpj": "111.444.777-35",
                 "contato": "contato@example.com",
                 "endereco": "Rua Teste",
                 "observacoes": "Obs",
@@ -145,7 +145,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 302)
 
         with self.app.app_context():
-            cliente = Cliente.query.filter_by(cpf_cnpj="52998224725").first()
+            cliente = Cliente.query.filter_by(cpf_cnpj="11144477735").first()
             self.assertIsNotNone(cliente)
             self.assertEqual(cliente.nome, "Novo Cliente")
 
