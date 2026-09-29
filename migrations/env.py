@@ -6,8 +6,6 @@ from processos.extensions import db
 
 config = context.config
 
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
 
 def get_engine():
     return current_app.extensions["migrate"].db.engine
