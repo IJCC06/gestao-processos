@@ -40,11 +40,15 @@ def login():
         )
 
         if usuario and senha_valida:
-            login_user(usuario)
-            next_url = _safe_next_url(request.args.get("next"))
-            return redirect(next_url or url_for("dashboard.index"))
+            if not usuario.is_active:
+                flash("Esta conta está desativada. Procure um administrador.", "error")
+            else:
+                login_user(usuario)
+                next_url = _safe_next_url(request.args.get("next"))
+                return redirect(next_url or url_for("dashboard.index"))
 
-        flash("Usuário ou senha inválidos.", "error")
+        if not usuario or not senha_valida:
+            flash("Usuário ou senha inválidos.", "error")
 
     return render_template("registration/login.html")
 
@@ -72,7 +76,7 @@ def cadastro():
         elif password != password_confirmation:
             flash("As senhas não coincidem.", "error")
         else:
-            usuario = Usuario(username=username)
+            usuario = Usuario(username=username, is_active=True, is_admin=False)
             usuario.set_password(password)
             db.session.add(usuario)
             db.session.commit()
