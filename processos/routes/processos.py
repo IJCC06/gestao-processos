@@ -113,7 +113,13 @@ def form(processo=None):
 @processos_bp.get("/<int:pk>/")
 @login_required
 def detail(pk):
+    processo = db.get_or_404(Processo, pk)
     return render_template(
         "processos/processos/detail.html",
-        processo=db.get_or_404(Processo, pk),
+        processo=processo,
+        prazos_pendentes=[
+            prazo
+            for prazo in processo.prazos
+            if prazo.status == "pendente"
+        ],
     )
