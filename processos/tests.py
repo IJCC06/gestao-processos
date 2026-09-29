@@ -1117,6 +1117,30 @@ class FluxosPrincipaisTests(unittest.TestCase):
             usuario = db.session.get(Usuario, self.usuario_id)
             self.assertTrue(usuario.check_password("nova-senha-123"))
 
+    @patch("processos.routes.sistema.os._exit")
+    @patch("processos.routes.sistema.threading.Timer")
+    def test_encerrar_sistema_desloga_e_solicita_encerramento(self, timer_cls, exit_mock):
+        class TimerFake:
+            def __init__(self, delay, target):
+                self.delay = delay
+                self.target = target
+
+            def start(self):
+                self.target()
+
+        timer_cls.side_effect = TimerFake
+
+        self.login()
+        resposta = self.client.post("/sistema/encerrar/")
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Sistema encerrando", resposta.data)
+        exit_mock.assert_called_once_with(0)
+
+        resposta = self.client.get("/processos/")
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
+
     def test_login_rejeita_usuario_desativado(self):
         with self.app.app_context():
             usuario = db.session.get(Usuario, self.usuario_id)
