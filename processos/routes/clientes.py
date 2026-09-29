@@ -40,7 +40,7 @@ def create():
 @clientes_bp.route("/<int:pk>/editar/", methods=["GET", "POST"])
 @login_required
 def update(pk):
-    return form(Cliente.query.get_or_404(pk))
+    return form(db.get_or_404(Cliente, pk))
 
 
 def form(cliente=None):
@@ -98,14 +98,14 @@ def form(cliente=None):
 def detail(pk):
     return render_template(
         "processos/clientes/detail.html",
-        cliente=Cliente.query.get_or_404(pk),
+        cliente=db.get_or_404(Cliente, pk),
     )
 
 
 @clientes_bp.route("/<int:pk>/excluir/", methods=["GET", "POST"])
 @login_required
 def delete(pk):
-    cliente = Cliente.query.get_or_404(pk)
+    cliente = db.get_or_404(Cliente, pk)
 
     if request.method == "POST":
         if cliente.processos:
