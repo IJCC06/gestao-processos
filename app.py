@@ -1,4 +1,6 @@
+import logging
 import os
+from logging.handlers import RotatingFileHandler
 
 import click
 from dotenv import load_dotenv
@@ -39,6 +41,7 @@ def create_app():
     )
     app.config.from_object(Config)
     Config.validate_security()
+    configure_logging(app)
 
     if os.environ.get("DATABASE_URL"):
         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
@@ -58,6 +61,38 @@ def create_app():
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(Usuario, int(user_id))
+
+
+def configure_logging(app):
+    log_file = app.config["LOG_FILE"]
+    log_dir = os.path.dirname(log_file)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
+    level = getattr(logging, app.config["LOG_LEVEL"], logging.INFO)
+    app.logger.setLevel(level)
+
+    if not any(
+        isinstance(handler, RotatingFileHandler)
+        and getattr(handler, "baseFilename", None) == os.path.abspath(log_file)
+        for handler in app.logger.handlers
+    ):
+        handler = RotatingFileHandler(
+            log_file,
+            maxBytes=2 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        handler.setLevel(level)
+        handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+            )
+        )
+        app.logger.addHandler(handler)
+
+    logging.getLogger("werkzeug").setLevel(level)
+
 
 
 def register_error_handlers(app):
