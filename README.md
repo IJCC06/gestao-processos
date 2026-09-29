@@ -17,6 +17,7 @@ Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e m
 - Dashboard
 - Cadastro de clientes
 - Cadastro de processos
+- Página de detalhes do processo com resumo, prazos pendentes, movimentações e alertas
 - Busca de processos por número CNJ, cliente ou tribunal
 - Filtros de processos por área e status
 - Cadastro de prazos
