@@ -1,0 +1,58 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Auditoria | Administração{% endblock %}
+{% block heading %}Log de auditoria{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+  <div class="section-header">
+    <div>
+      <h2>Atividades registradas</h2>
+      <p class="dashboard-subtitle">{{ total }} registro(s) de auditoria.</p>
+    </div>
+  </div>
+
+  {% if auditorias %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Data/hora</th>
+            <th>Usuário</th>
+            <th>Ação</th>
+            <th>Entidade</th>
+            <th>Registro</th>
+            <th>Detalhes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in auditorias %}
+            <tr>
+              <td>{{ item.criado_em.strftime("%d/%m/%Y %H:%M:%S") }}</td>
+              <td>{{ item.usuario.username if item.usuario else "Sistema" }}</td>
+              <td>{{ item.acao }}</td>
+              <td>{{ item.entidade }}</td>
+              <td>{{ item.registro_id if item.registro_id is not none else "—" }}</td>
+              <td>{{ item.detalhes or "—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if total_paginas > 1 %}
+      <nav class="pagination" aria-label="Paginação da auditoria">
+        {% if pagina > 1 %}
+          <a class="button secondary" href="{{ url_for('auditoria.list', page=pagina - 1) }}">Anterior</a>
+        {% endif %}
+        <span>Página {{ pagina }} de {{ total_paginas }}</span>
+        {% if pagina < total_paginas %}
+          <a class="button secondary" href="{{ url_for('auditoria.list', page=pagina + 1) }}">Próxima</a>
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <p>Nenhum registro de auditoria foi encontrado.</p>
+  {% endif %}
+</section>
+{% endblock %}
