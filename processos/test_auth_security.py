@@ -91,6 +91,37 @@ class AuthSecurityTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 400)
         self.app.config["WTF_CSRF_ENABLED"] = False
 
+    def test_post_de_exclusao_sem_csrf_e_rejeitado(self):
+        from processos.models import Cliente
+
+        self.app.config["WTF_CSRF_ENABLED"] = False
+        with self.app.app_context():
+            cliente = Cliente(
+                nome="Cliente CSRF",
+                cpf_cnpj="52998224725",
+            )
+            db.session.add(cliente)
+            db.session.commit()
+            cliente_id = cliente.id
+
+        resposta = self.client.post(
+            "/login/",
+            data={
+                "username": "teste",
+                "password": "senha-segura-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        self.app.config["WTF_CSRF_ENABLED"] = True
+        resposta = self.client.post(f"/clientes/{cliente_id}/excluir/")
+
+        self.assertEqual(resposta.status_code, 400)
+        self.app.config["WTF_CSRF_ENABLED"] = False
+
+        with self.app.app_context():
+            self.assertIsNotNone(db.session.get(Cliente, cliente_id))
+
     def test_cookie_de_sessao_tem_protecoes_basicas(self):
         self.assertTrue(self.app.config["SESSION_COOKIE_HTTPONLY"])
         self.assertEqual(self.app.config["SESSION_COOKIE_SAMESITE"], "Lax")
