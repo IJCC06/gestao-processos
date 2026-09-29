@@ -111,7 +111,8 @@ def form(cliente=None):
         ).first():
             flash("Já existe um cliente com este CPF/CNPJ.", "error")
         else:
-            if cliente is None:
+            novo_cliente = cliente is None
+            if novo_cliente:
                 cliente = Cliente()
 
             cliente.nome = nome
@@ -127,7 +128,7 @@ def form(cliente=None):
                 db.session.rollback()
                 flash("Já existe um cliente com este CPF/CNPJ.", "error")
             else:
-                registrar_auditoria("ALTERAR" if cliente.id else "CRIAR", "Cliente", cliente.id, f"Cliente salvo: {cliente.nome}.")
+                registrar_auditoria("CRIAR" if novo_cliente else "ALTERAR", "Cliente", cliente.id, f"Cliente salvo: {cliente.nome}.")
                 db.session.commit()
                 flash("Cliente salvo com sucesso.", "success")
                 return redirect(url_for("clientes.detail", pk=cliente.id))
