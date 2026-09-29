@@ -104,6 +104,31 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self._perf_login_total += time.perf_counter() - start
         return resposta
 
+    def test_configuracao_inicial_cria_primeiro_administrador(self):
+        with self.app.app_context():
+            db.session.query(Auditoria).delete()
+            db.session.query(Usuario).delete()
+            db.session.commit()
+
+        resposta = self.client.post(
+            "/configuracao-inicial/",
+            data={
+                "username": "admin",
+                "password": "senha-admin-123",
+                "password_confirmation": "senha-admin-123",
+                "datajud_api_key": "",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
+
+        with self.app.app_context():
+            usuario = Usuario.query.filter_by(username="admin").one()
+            self.assertTrue(usuario.is_admin)
+            self.assertTrue(usuario.is_active)
+            self.assertTrue(usuario.check_password("senha-admin-123"))
+
     def test_pagina_404_personalizada(self):
         self.login()
         resposta = self.client.get("/rota-que-nao-existe/")
