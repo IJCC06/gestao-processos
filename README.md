@@ -22,7 +22,7 @@ Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e m
 - Filtros de processos por área e status
 - Cadastro de prazos
 - Área de notificações
-- Consulta manual de movimentações pelo DataJud
+- Consulta manual de movimentações pelo DataJud, inclusive por processo
 - Prevenção de duplicação de movimentações
 - Proteção CSRF nos formulários
 - Configuração por variáveis de ambiente
@@ -30,9 +30,9 @@ Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e m
 
 ## Atualização das movimentações
 
-A atualização é feita manualmente dentro do sistema, pela área de notificações. Não há dependência de Celery, Redis ou outro serviço de tarefas em segundo plano.
+A atualização é feita manualmente dentro do sistema. Na área de notificações é possível atualizar os processos não arquivados em uma única operação, e na página de detalhes é possível atualizar somente um processo específico. Não há dependência de Celery, Redis ou outro serviço de tarefas em segundo plano.
 
-A rotina seleciona processos não arquivados, consulta o DataJud, valida as movimentações recebidas e grava somente novidades.
+A rotina valida as movimentações recebidas e grava somente novidades. Erros de configuração ou de comunicação com o DataJud são informados na interface, sem interromper a atualização dos demais processos em uma atualização geral.
 
 Também é possível executar a rotina pela CLI do Flask:
 
