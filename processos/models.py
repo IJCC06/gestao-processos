@@ -67,7 +67,7 @@ class Processo(db.Model):
     valor_causa = db.Column(db.Numeric(12, 2), nullable=True)
     honorarios = db.Column(db.Numeric(12, 2), nullable=True)
     alerta_pendente = db.Column(db.Boolean, default=False, nullable=False)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     cliente = db.relationship("Cliente", back_populates="processos")
     movimentacoes = db.relationship("Movimentacao", back_populates="processo", cascade="all, delete-orphan", order_by="desc(Movimentacao.data)")
@@ -86,7 +86,7 @@ class Movimentacao(db.Model):
     data = db.Column(db.DateTime, nullable=False)
     descricao = db.Column(db.Text, nullable=False)
     origem = db.Column(db.String(50), default="datajud", nullable=False)
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     processo = db.relationship("Processo", back_populates="movimentacoes")
 
 
@@ -111,7 +111,7 @@ class Prazo(db.Model):
     data_vencimento = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(20), default=Status.PENDENTE, nullable=False)
     observacoes = db.Column(db.Text, default="")
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     atualizado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     processo = db.relationship("Processo", back_populates="prazos")
 
