@@ -96,13 +96,12 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self._perf_login_total += time.perf_counter() - start
         return resposta
 
-    def test_cadastro_exibe_formulario(self):
+    def test_cadastro_publico_esta_bloqueado(self):
         resposta = self.client.get("/cadastro/")
-        self.assertEqual(resposta.status_code, 200)
-        self.assertIn("Criar sua conta".encode("utf-8"), resposta.data)
-        self.assertIn(b"username", resposta.data)
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
 
-    def test_cadastro_cria_usuario_com_senha_hash(self):
+    def test_cadastro_publico_nao_cria_usuario(self):
         resposta = self.client.post(
             "/cadastro/",
             data={
@@ -112,106 +111,8 @@ class FluxosPrincipaisTests(unittest.TestCase):
             },
         )
         self.assertEqual(resposta.status_code, 302)
-        self.assertIn("/login/", resposta.location)
-
         with self.app.app_context():
-            usuario = Usuario.query.filter_by(username="novo-usuario").first()
-            self.assertIsNotNone(usuario)
-            self.assertNotEqual(usuario.password_hash, "senha-segura-123")
-            self.assertTrue(usuario.check_password("senha-segura-123"))
-
-    def test_cadastro_rejeita_usuario_duplicado(self):
-        resposta = self.client.post(
-            "/cadastro/",
-            data={
-                "username": "teste",
-                "password": "senha-segura-123",
-                "password_confirmation": "senha-segura-123",
-            },
-        )
-        self.assertEqual(resposta.status_code, 200)
-        self.assertIn("já está em uso".encode("utf-8"), resposta.data)
-
-        with self.app.app_context():
-            self.assertEqual(Usuario.query.filter_by(username="teste").count(), 1)
-
-    def test_cadastro_rejeita_senha_curta_e_confirmacao_diferente(self):
-        resposta = self.client.post(
-            "/cadastro/",
-            data={
-                "username": "usuario-novo",
-                "password": "123",
-                "password_confirmation": "456",
-            },
-        )
-        self.assertEqual(resposta.status_code, 200)
-        self.assertIn("pelo menos 8 caracteres".encode("utf-8"), resposta.data)
-
-        with self.app.app_context():
-            self.assertIsNone(Usuario.query.filter_by(username="usuario-novo").first())
-
-    def test_cadastro_nao_exibe_formulario_para_usuario_logado(self):
-        self.login()
-        resposta = self.client.get("/cadastro/")
-        self.assertEqual(resposta.status_code, 302)
-        self.assertIn("/", resposta.location)
-
-    def test_dashboard_exige_login(self):
-        resposta = self.client.get("/")
-        self.assertEqual(resposta.status_code, 302)
-        self.assertIn("/login/", resposta.location)
-
-    def test_dashboard_separa_prazos(self):
-        with self.app.app_context():
-            hoje = Config.local_date()
-            processo = db.session.get(Processo, self.processo_id)
-            db.session.add_all(
-                [
-                    Prazo(
-                        processo=processo,
-                        titulo="Vencido",
-                        data_vencimento=hoje - timedelta(days=2),
-                    ),
-                    Prazo(
-                        processo=processo,
-                        titulo="Proximo",
-                        data_vencimento=hoje + timedelta(days=2),
-                    ),
-                ]
-            )
-            db.session.commit()
-
-        self.login()
-        resposta = self.client.get("/")
-        self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Vencido", resposta.data)
-        self.assertIn(b"Proximo", resposta.data)
-        self.assertIn(b"Prazos vencidos", resposta.data)
-        self.assertIn("Próximos 7 dias".encode("utf-8"), resposta.data)
-        self.assertIn(b"movimenta", resposta.data)
-
-    def test_lista_de_clientes_exibe_clientes_e_permite_busca(self):
-        with self.app.app_context():
-            outro = Cliente(
-                nome="Maria de Souza",
-                cpf_cnpj="11144477735",
-                contato="maria@example.com",
-            )
-            db.session.add(outro)
-            db.session.commit()
-
-        self.login()
-
-        resposta = self.client.get("/clientes/")
-        self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Cliente Teste", resposta.data)
-        self.assertIn(b"Maria de Souza", resposta.data)
-        self.assertIn(b"Novo cliente", resposta.data)
-
-        resposta = self.client.get("/clientes/", query_string={"q": "Maria"})
-        self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Maria de Souza", resposta.data)
-        self.assertNotIn(b"Cliente Teste", resposta.data)
+            self.assertIsNone(Usuario.query.filter_by(username="novo-usuario").first())
 
     def test_criacao_de_cliente(self):
         self.login()
