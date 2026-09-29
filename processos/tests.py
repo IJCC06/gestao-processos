@@ -131,7 +131,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             processos = [
                 Processo(
                     cliente=self._get_cliente(),
-                    numero_cnj=f"{i:07d}-49.2026.8.00.{i:04d}",
+                    numero_cnj=f"{i + 1000000:07d}-49.2026.8.00.{i:04d}",
                     area=Processo.Area.CIVEL,
                     tribunal="Tribunal de Teste",
                     tribunal_alias="tst",
