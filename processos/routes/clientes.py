@@ -140,9 +140,12 @@ def form(cliente=None):
 @clientes_bp.get("/<int:pk>/")
 @login_required
 def detail(pk):
+    cliente = db.session.get(Cliente, pk)
+    if cliente is None:
+        abort(404)
     return render_template(
         "processos/clientes/detail.html",
-        cliente=db.session.get(Cliente, pk),
+        cliente=cliente,
     )
 
 
