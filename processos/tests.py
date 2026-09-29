@@ -123,7 +123,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
     def test_paginacao_das_listagens_preserva_filtros(self):
         with self.app.app_context():
             clientes = [
-                Cliente(nome=f"Cliente {i:02d}", cpf_cnpj=f"529982247{i:02d}")
+                Cliente(nome=f"Cliente {i:02d}", cpf_cnpj=f"{10000000000 + i}")
                 for i in range(40)
             ]
             db.session.add_all(clientes)
