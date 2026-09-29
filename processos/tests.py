@@ -136,7 +136,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             "/clientes/novo/",
             data={
                 "nome": "Novo Cliente",
-                "cpf_cnpj": "98765432100",
+                "cpf_cnpj": "529.982.247-25",
                 "contato": "contato@example.com",
                 "endereco": "Rua Teste",
                 "observacoes": "Obs",
@@ -145,9 +145,42 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 302)
 
         with self.app.app_context():
-            cliente = Cliente.query.filter_by(cpf_cnpj="98765432100").first()
+            cliente = Cliente.query.filter_by(cpf_cnpj="52998224725").first()
             self.assertIsNotNone(cliente)
             self.assertEqual(cliente.nome, "Novo Cliente")
+
+    def test_criacao_de_cliente_rejeita_documento_invalido(self):
+        self.login()
+        resposta = self.client.post(
+            "/clientes/novo/",
+            data={"nome": "Cliente Inválido", "cpf_cnpj": "123.456.789-00"},
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("Informe um CPF ou CNPJ válido.".encode("utf-8"), resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Cliente.query.count(), 1)
+
+    def test_edicao_de_cliente_preserva_dados_digitados_em_erro(self):
+        self.login()
+        resposta = self.client.post(
+            f"/clientes/{self.cliente_id}/editar/",
+            data={
+                "nome": "Nome Digitado",
+                "cpf_cnpj": "123.456.789-00",
+                "contato": "Contato Digitado",
+                "endereco": "Endereco Digitado",
+                "observacoes": "Observacao Digitada",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b'Nome Digitado', resposta.data)
+        self.assertIn(b'123.456.789-00', resposta.data)
+        self.assertIn(b'Contato Digitado', resposta.data)
+        self.assertIn(b'Endereco Digitado', resposta.data)
+        self.assertIn(b'Observacao Digitada', resposta.data)
 
     def test_criacao_de_cliente_exige_nome_e_cpf_cnpj(self):
         self.login()
@@ -181,7 +214,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             f"/clientes/{self.cliente_id}/editar/",
             data={
                 "nome": "Cliente Atualizado",
-                "cpf_cnpj": "12345678901",
+                "cpf_cnpj": "52998224725",
                 "contato": "novo-contato",
                 "endereco": "Novo endereco",
                 "observacoes": "Nova observacao",
@@ -208,7 +241,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             f"/clientes/{self.cliente_id}/editar/",
             data={
                 "nome": "Cliente Atualizado",
-                "cpf_cnpj": "98765432100",
+                "cpf_cnpj": "52998224725",
             },
         )
 
