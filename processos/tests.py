@@ -691,6 +691,32 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.assertEqual(str(processo.valor_causa), "2500.50")
             self.assertEqual(str(processo.honorarios), "250.00")
 
+    def test_criacao_de_processo_rejeita_cnj_duplicado(self):
+        self.login()
+        resposta = self.client.post(
+            "/processos/novo/",
+            data={
+                "cliente": self.cliente_id,
+                "numero_cnj": "0000000-49.2026.8.00.0000",
+                "area": Processo.Area.CIVEL,
+                "tribunal": "Outro Tribunal",
+                "status": Processo.Status.ATIVO,
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("Já existe um processo com este número CNJ.".encode("utf-8"), resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Processo.query.count(), 1)
+
+    def test_exclusao_de_processo_exibe_confirmacao(self):
+        self.login()
+        resposta = self.client.get(f"/processos/{self.processo_id}/excluir/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("Confirmar exclusão".encode("utf-8"), resposta.data)
+        self.assertIsNotNone(resposta)
+
     def test_exclusao_de_processo_remove_vinculos(self):
         with self.app.app_context():
             processo = db.session.get(Processo, self.processo_id)
