@@ -1121,12 +1121,13 @@ class FluxosPrincipaisTests(unittest.TestCase):
     @patch("processos.routes.sistema.threading.Timer")
     def test_encerrar_sistema_desloga_e_solicita_encerramento(self, timer_cls, exit_mock):
         class TimerFake:
-            def __init__(self, delay, target):
+            def __init__(self, delay, target, args=()):
                 self.delay = delay
                 self.target = target
+                self.args = args
 
             def start(self):
-                self.target()
+                self.target(*self.args)
 
         timer_cls.side_effect = TimerFake
 
