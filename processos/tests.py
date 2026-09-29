@@ -7,7 +7,7 @@ from unittest.mock import patch
 from config.settings import Config
 from processos.extensions import db
 from processos.models import Cliente, Movimentacao, Prazo, Processo, Usuario
-from processos.services.movimentacoes import verificar_movimentacoes
+from processos.services.movimentacoes import verificar_movimentacao_processo, verificar_movimentacoes
 
 
 class FluxosPrincipaisTests(unittest.TestCase):
@@ -331,6 +331,52 @@ class FluxosPrincipaisTests(unittest.TestCase):
         with self.app.app_context():
             processo = db.session.get(Processo, self.processo_id)
             self.assertFalse(processo.alerta_pendente)
+
+    @patch("processos.services.movimentacoes.consultar_movimentacoes")
+    def test_atualizacao_individual_datajud_cria_movimentacao(self, consultar):
+        consultar.return_value = [
+            {
+                "dataHora": "2026-09-23T12:00:00Z",
+                "nome": "Movimentação individual",
+            }
+        ]
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            resultado = verificar_movimentacao_processo(processo)
+            db.session.commit()
+
+            self.assertEqual(resultado["total_novas"], 1)
+            self.assertIsNone(resultado["erro"])
+            self.assertTrue(processo.alerta_pendente)
+            self.assertEqual(Movimentacao.query.count(), 1)
+
+    @patch("processos.services.movimentacoes.consultar_movimentacoes")
+    def test_atualizacao_individual_datajud_retorna_erro(self, consultar):
+        from processos.services.datajud import DataJudError
+
+        consultar.side_effect = DataJudError("DataJud indisponível")
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            resultado = verificar_movimentacao_processo(processo)
+
+            self.assertEqual(resultado["total_novas"], 0)
+            self.assertEqual(resultado["erro"], "DataJud indisponível")
+            self.assertEqual(Movimentacao.query.count(), 0)
+
+    @patch("processos.services.movimentacoes.consultar_movimentacoes")
+    def test_atualizacao_individual_datajud_exibe_mensagem_na_tela(self, consultar):
+        consultar.return_value = []
+
+        self.login()
+        resposta = self.client.post(
+            f"/processos/{self.processo_id}/atualizar-movimentacoes/",
+            follow_redirects=True,
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"0 movimenta", resposta.data)
 
     @patch("processos.services.movimentacoes.consultar_movimentacoes")
     def test_verificacao_datajud_cria_movimentacao_nova(self, consultar):
