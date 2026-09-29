@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy import or_
 
 from processos.extensions import db
 from processos.models import Cliente, Processo
@@ -14,23 +15,25 @@ def list():
     status = request.args.get("status", "").strip()
     area = request.args.get("area", "").strip()
 
-    processos = Processo.query.all()
+    consulta = Processo.query.order_by(Processo.criado_em.desc())
 
     if busca:
-        termo = busca.lower()
-        processos = [
-            processo
-            for processo in processos
-            if termo in processo.numero_cnj.lower()
-            or termo in processo.cliente.nome.lower()
-            or termo in (processo.tribunal or "").lower()
-        ]
+        termo = f"%{busca}%"
+        consulta = consulta.filter(
+            or_(
+                Processo.numero_cnj.ilike(termo),
+                Processo.tribunal.ilike(termo),
+                Processo.cliente.has(Cliente.nome.ilike(termo)),
+            )
+        )
 
     if status in Processo.Status.values():
-        processos = [processo for processo in processos if processo.status == status]
+        consulta = consulta.filter(Processo.status == status)
 
     if area in Processo.Area.values():
-        processos = [processo for processo in processos if processo.area == area]
+        consulta = consulta.filter(Processo.area == area)
+
+    processos = consulta.all()
 
     return render_template(
         "processos/processos/list.html",
@@ -52,7 +55,7 @@ def create():
 @processos_bp.route("/<int:pk>/editar/", methods=["GET", "POST"])
 @login_required
 def update(pk):
-    return form(Processo.query.get_or_404(pk))
+    return form(db.get_or_404(Processo, pk))
 
 
 def form(processo=None):
@@ -112,5 +115,5 @@ def form(processo=None):
 def detail(pk):
     return render_template(
         "processos/processos/detail.html",
-        processo=Processo.query.get_or_404(pk),
+        processo=db.get_or_404(Processo, pk),
     )
