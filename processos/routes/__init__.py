@@ -3,6 +3,7 @@ from .clientes import clientes_bp
 from .processos import processos_bp
 from .prazos import prazos_bp
 from .notificacoes import notificacoes_bp
+from .dashboard import dashboard_bp
 
 __all__ = [
     "auth_bp",
@@ -10,4 +11,5 @@ __all__ = [
     "processos_bp",
     "prazos_bp",
     "notificacoes_bp",
+    "dashboard_bp",
 ]
