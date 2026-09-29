@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from config.settings import Config
 from processos.extensions import db
-from processos.models import Cliente, Movimentacao, Prazo, Processo, Usuario
+from processos.models import Auditoria, Cliente, Movimentacao, Prazo, Processo, Usuario
 from processos.services.movimentacoes import verificar_movimentacao_processo, verificar_movimentacoes
 
 
@@ -1076,3 +1076,102 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AuditoriaTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+        from app import create_app
+        cls.app = create_app()
+        cls.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        with cls.app.app_context():
+            db.session.remove()
+            db.drop_all()
+            db.session.remove()
+            db.engine.dispose()
+        os.environ.pop("DATABASE_URL", None)
+
+    def setUp(self):
+        with self.app.app_context():
+            db.session.remove()
+            db.drop_all()
+            db.create_all()
+            usuario = Usuario(
+                username="auditor",
+                password_hash=FluxosPrincipaisTests.TEST_PASSWORD_HASH,
+            )
+            db.session.add(usuario)
+            db.session.commit()
+            self.usuario_id = usuario.id
+
+        self.client = self.app.test_client()
+
+    def test_login_cria_registro_de_auditoria(self):
+        resposta = self.client.post(
+            "/login/",
+            data={"username": "auditor", "password": "senha-segura-123"},
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            registro = Auditoria.query.filter_by(
+                acao="LOGIN",
+                entidade="Usuario",
+                registro_id=self.usuario_id,
+            ).first()
+            self.assertIsNotNone(registro)
+            self.assertEqual(registro.usuario_id, self.usuario_id)
+
+    def test_criacao_de_cliente_cria_registro_de_auditoria(self):
+        self.client.post(
+            "/login/",
+            data={"username": "auditor", "password": "senha-segura-123"},
+        )
+        with self.app.app_context():
+            cliente = Cliente(nome="Cliente Auditado", cpf_cnpj="52998224725")
+            db.session.add(cliente)
+            db.session.commit()
+
+        resposta = self.client.post(
+            "/clientes/novo/",
+            data={
+                "nome": "Novo Cliente Auditado",
+                "cpf_cnpj": "11144477735",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            registro = Auditoria.query.filter_by(
+                acao="CRIAR",
+                entidade="Cliente",
+            ).order_by(Auditoria.id.desc()).first()
+            self.assertIsNotNone(registro)
+            self.assertEqual(registro.usuario_id, self.usuario_id)
+            self.assertIn("Novo Cliente Auditado", registro.detalhes)
+
+    def test_admin_pode_consultar_auditoria(self):
+        with self.app.app_context():
+            usuario = db.session.get(Usuario, self.usuario_id)
+            usuario.is_admin = True
+            db.session.commit()
+
+        self.client.post(
+            "/login/",
+            data={"username": "auditor", "password": "senha-segura-123"},
+        )
+        resposta = self.client.get("/admin/auditoria/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Log de auditoria", resposta.data)
+
+    def test_usuario_comum_nao_pode_consultar_auditoria(self):
+        self.client.post(
+            "/login/",
+            data={"username": "auditor", "password": "senha-segura-123"},
+        )
+        resposta = self.client.get("/admin/auditoria/")
+        self.assertEqual(resposta.status_code, 403)
