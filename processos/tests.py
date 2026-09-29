@@ -147,7 +147,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
                     data_vencimento=date(2026, 10, 1) + timedelta(days=i),
                     status=Prazo.Status.PENDENTE,
                 )
-                for i in range(20)
+                for i in range(40)
             ]
             db.session.add_all(prazos)
             db.session.commit()
@@ -156,8 +156,9 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get("/clientes/?page=2")
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Cliente 19", resposta.data)
-        self.assertNotIn(b"Cliente 00", resposta.data)
+        self.assertIn(b"Cliente 20", resposta.data)
+        self.assertIn(b"Cliente 39", resposta.data)
+        self.assertNotIn(b"Cliente 19", resposta.data)
 
         resposta = self.client.get(
             "/processos/",
@@ -172,8 +173,9 @@ class FluxosPrincipaisTests(unittest.TestCase):
             query_string={"status": Prazo.Status.PENDENTE, "page": 2},
         )
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Prazo 19", resposta.data)
-        self.assertNotIn(b"Prazo 00", resposta.data)
+        self.assertIn(b"Prazo 20", resposta.data)
+        self.assertIn(b"Prazo 39", resposta.data)
+        self.assertNotIn(b"Prazo 19", resposta.data)
 
     def test_criacao_de_cliente(self):
         self.login()
