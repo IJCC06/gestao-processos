@@ -66,7 +66,7 @@ def atualizar_movimentacoes():
 @notificacoes_bp.post("/processos/<int:pk>/limpar/")
 @login_required
 def limpar_alerta_processo(pk):
-    processo = Processo.query.get_or_404(pk)
+    processo = db.get_or_404(Processo, pk)
     processo.alerta_pendente = False
     db.session.commit()
     flash(
