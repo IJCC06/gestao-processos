@@ -29,7 +29,7 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
 
-    next_url = _safe_next_url(request.args.get("next"))
+    next_url = _safe_next_url(request.args.get("next") or request.form.get("next"))
 
     if request.method == "POST":
         usuario = Usuario.query.filter_by(
