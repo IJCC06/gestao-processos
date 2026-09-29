@@ -30,8 +30,8 @@ def form(prazo=None):
     processos = Processo.query.order_by(Processo.numero_cnj).all()
 
     if request.method == "POST":
-        processo = Processo.query.get(
-            request.form.get("processo", type=int)
+        processo = db.session.get(
+            Processo, request.form.get("processo", type=int)
         )
         titulo = request.form.get("titulo", "").strip()
         inicio = request.form.get("data_inicio") or None
