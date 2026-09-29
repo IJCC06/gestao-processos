@@ -28,7 +28,7 @@ def list():
 
     movimentos = (
         Movimentacao.query.join(Processo)
-        .filter(Processo.alerta_pendente.is_(True))
+        .filter(Movimentacao.lida.is_(False))
         .order_by(Movimentacao.data.desc())
         .all()
     )
@@ -67,10 +67,14 @@ def atualizar_movimentacoes():
 @login_required
 def limpar_alerta_processo(pk):
     processo = db.get_or_404(Processo, pk)
+    Movimentacao.query.filter_by(
+        processo_id=processo.id,
+        lida=False,
+    ).update({"lida": True}, synchronize_session=False)
     processo.alerta_pendente = False
     db.session.commit()
     flash(
-        "Alerta de movimentação marcado como visto.",
+        "Movimentações do processo marcadas como vistas.",
         "success",
     )
     return redirect(url_for("notificacoes.list"))
