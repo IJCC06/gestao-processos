@@ -23,6 +23,7 @@ from processos.routes import (
     admin_bp,
     auditoria_bp,
     sistema_bp,
+    setup_bp,
 )
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -157,6 +158,7 @@ def register_blueprints(app):
     app.register_blueprint(admin_bp)
     app.register_blueprint(auditoria_bp)
     app.register_blueprint(sistema_bp)
+    app.register_blueprint(setup_bp)
 
 
 def register_cli(app):
