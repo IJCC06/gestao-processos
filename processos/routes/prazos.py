@@ -112,9 +112,12 @@ def list():
 @prazos_bp.get("/<int:pk>/")
 @login_required
 def detail(pk):
+    prazo = db.session.get(Prazo, pk)
+    if prazo is None:
+        abort(404)
     return render_template(
         "processos/prazos/detail.html",
-        prazo=db.session.get(Prazo, pk),
+        prazo=prazo,
     )
 
 
