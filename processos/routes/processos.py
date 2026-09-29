@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from processos.extensions import db
 from processos.models import Cliente, Prazo, Processo
+from processos.services.auditoria import registrar_auditoria
 from processos.services.movimentacoes import verificar_movimentacao_processo
 
 processos_bp = Blueprint("processos", __name__, url_prefix="/processos")
@@ -178,6 +179,8 @@ def form(processo=None):
                 db.session.rollback()
                 flash("Já existe um processo com este número CNJ.", "error")
             else:
+                registrar_auditoria("ALTERAR" if processo.id else "CRIAR", "Processo", processo.id, f"Processo salvo: {processo.numero_cnj}.")
+                db.session.commit()
                 flash("Processo salvo com sucesso.", "success")
                 return redirect(url_for("processos.detail", pk=processo.id))
 
@@ -198,7 +201,11 @@ def delete(pk):
         abort(404)
 
     if request.method == "POST":
+        processo_id = processo.id
+        numero_cnj = processo.numero_cnj
         db.session.delete(processo)
+        db.session.commit()
+        registrar_auditoria("EXCLUIR", "Processo", processo_id, f"Processo excluído: {numero_cnj}.")
         db.session.commit()
         flash("Processo excluído com sucesso.", "success")
         return redirect(url_for("processos.list"))
@@ -224,6 +231,8 @@ def atualizar_movimentacoes(pk):
             "error",
         )
     else:
+        db.session.commit()
+        registrar_auditoria("DATAJUD", "Processo", processo.id, f"Consulta DataJud: {resultado["total_novas"]} nova(s) movimentação(ões).")
         db.session.commit()
         flash(
             f"Consulta concluída: {resultado['total_novas']} "
