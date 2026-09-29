@@ -9,6 +9,7 @@ from flask_wtf import CSRFProtect
 from config.settings import Config
 from processos.extensions import db, migrate
 from processos.models import Usuario
+from processos.services.auditoria import registrar_auditoria
 from processos.services.movimentacoes import verificar_movimentacoes
 from processos.routes import (
     auth_bp,
@@ -88,6 +89,8 @@ def register_cli(app):
                 return
             usuario.is_admin = True
             usuario.is_active = True
+            db.session.commit()
+            registrar_auditoria("PERMISSAO", "Usuario", usuario.id, "Usuário promovido a administrador via CLI.")
             db.session.commit()
             click.echo(f"Usuário '{usuario.username}' agora é administrador.")
 
