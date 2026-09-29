@@ -88,6 +88,43 @@ def register_cli(app):
             db.session.commit()
             click.echo(f"Usuário '{usuario.username}' agora é administrador.")
 
+    @app.cli.command("backup-db")
+    @click.option(
+        "--retention-days",
+        default=30,
+        show_default=True,
+        type=click.IntRange(min=1),
+        help="Quantidade de dias de backups a manter.",
+    )
+    def backup_db_cli(retention_days):
+        """Cria um backup consistente do banco SQLite."""
+        import click
+
+        from processos.services.backup import BackupError, backup_sqlite
+
+        database_uri = app.config["SQLALCHEMY_DATABASE_URI"]
+        if not database_uri.startswith("sqlite"):
+            raise click.ClickException(
+                "O backup local está configurado apenas para bancos SQLite."
+            )
+
+        database_path = db.engine.url.database
+        backup_dir = os.environ.get(
+            "BACKUP_DIR",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups"),
+        )
+
+        try:
+            destino = backup_sqlite(
+                database_path=database_path,
+                backup_dir=backup_dir,
+                retention_days=retention_days,
+            )
+        except BackupError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        click.echo(f"Backup criado com sucesso: {destino}")
+
     @app.cli.command("verificar-movimentacoes")
     def verificar_movimentacoes_cli():
         resultado = verificar_movimentacoes()
