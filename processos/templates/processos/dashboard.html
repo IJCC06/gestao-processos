@@ -19,8 +19,8 @@
           <a class="button secondary" href="{{ url_for('admin.index') }}">Administração</a>
         {% endif %}
         <form class="dashboard-logout" method="post" action="{{ url_for('auth.logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Sair</button>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit">Sair</button>
         </form>
       </div>
     </header>
