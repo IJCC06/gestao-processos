@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -25,7 +25,7 @@ class Cliente(db.Model):
     contato = db.Column(db.String(100), default="")
     endereco = db.Column(db.String(300), default="")
     observacoes = db.Column(db.Text, default="")
-    criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     processos = db.relationship("Processo", back_populates="cliente")
 
 
@@ -112,7 +112,7 @@ class Prazo(db.Model):
     status = db.Column(db.String(20), default=Status.PENDENTE, nullable=False)
     observacoes = db.Column(db.Text, default="")
     criado_em = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    atualizado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     processo = db.relationship("Processo", back_populates="prazos")
 
     @property
