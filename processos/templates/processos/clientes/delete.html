@@ -1,1 +1,1 @@
-<html><body><a href="{{ url_for('cliente_detail',pk=cliente.id) }}">Voltar</a><h1>Excluir cliente</h1><p>Confirma a exclusão de <b>{{ cliente.nome }}</b>?</p><form method="post">{{ csrf_token() }}<button type="submit">Confirmar</button></form></body></html>
+<html><body><a href="{{ url_for('cliente_detail',pk=cliente.id) }}">Voltar</a><h1>Excluir cliente</h1><p>Confirma a exclusão de <b>{{ cliente.nome }}</b>?</p><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Confirmar</button></form></body></html>
