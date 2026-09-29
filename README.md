@@ -117,6 +117,52 @@ Os testes utilizam SQLite em memória para não alterar o banco local de desenvo
     ├── .gitignore
     └── requirements.txt
 
+## Backup do banco SQLite
+
+O sistema possui backup manual e pode ser configurado para executar backups automaticamente no Windows. O backup usa a API nativa do SQLite, gerando uma cópia consistente mesmo enquanto a aplicação está em execução.
+
+### Backup manual
+
+Na pasta do projeto:
+
+    scripts\backup_db.bat
+
+Ou diretamente pela CLI:
+
+    flask --app app backup-db
+
+Por padrão, os backups são salvos em:
+
+    backups\
+
+e os arquivos seguem o formato:
+
+    flask_AAAAMMDD_HHMMSS.db
+
+O sistema mantém os últimos 30 dias de backups por padrão. Para alterar a retenção:
+
+    flask --app app backup-db --retention-days 60
+
+Também é possível definir outra pasta por meio de `BACKUP_DIR`.
+
+### Backup automático no Windows
+
+Execute uma vez:
+
+    scripts\configurar_backup_automatico.bat
+
+Isso cria uma tarefa do Agendador de Tarefas do Windows chamada `GestaoProcessos - Backup diario`, configurada para executar o backup todos os dias às 02:00.
+
+Para remover a tarefa:
+
+    schtasks /Delete /TN "GestaoProcessos - Backup diario" /F
+
+O backup automático depende do computador estar ligado no horário programado. Se ele estiver desligado, a tarefa não executará retroativamente. Para maior segurança operacional, mantenha também cópias dos backups em outro local físico.
+
+### Verificação do backup
+
+Cada backup é validado com `PRAGMA integrity_check` antes de ser considerado concluído. Mesmo assim, um backup só deve ser considerado confiável depois de um teste real de restauração.
+
 ## Segurança
 
 O sistema lida com dados pessoais e deve ser configurado com atenção antes de qualquer uso em produção.
@@ -127,7 +173,8 @@ O sistema lida com dados pessoais e deve ser configurado com atenção antes de 
 - Senhas são armazenadas usando hash.
 - HTTPS deve ser utilizado em produção.
 - A chave secreta padrão deve ser substituída por uma chave forte.
-- Backups, auditoria e política de retenção devem ser definidos antes da implantação em produção.
+- Backups locais são gerados pelo comando `backup-db` e podem ser agendados no Windows.
+- O procedimento de restauração deve ser testado periodicamente antes do uso real.
 
 ## DataJud
 
