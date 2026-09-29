@@ -4,7 +4,6 @@ import unittest
 from datetime import timedelta
 from unittest.mock import patch
 
-from app import create_app
 from config.settings import Config
 from processos.extensions import db
 from processos.models import Cliente, Movimentacao, Prazo, Processo, Usuario
@@ -23,6 +22,8 @@ class FluxosPrincipaisTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+        from app import create_app
+
         cls.app = create_app()
         cls.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
 
