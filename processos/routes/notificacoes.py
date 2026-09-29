@@ -7,6 +7,7 @@ from config.settings import Config
 from processos.extensions import db
 from processos.models import Movimentacao, Prazo, Processo
 from processos.services.movimentacoes import verificar_movimentacoes
+from processos.services.auditoria import registrar_auditoria
 
 notificacoes_bp = Blueprint("notificacoes", __name__, url_prefix="/notificacoes")
 
@@ -53,6 +54,8 @@ def atualizar_movimentacoes():
             "warning",
         )
     else:
+        registrar_auditoria("DATAJUD", "Movimentacao", None, f"Consulta geral DataJud: {resultado['total_novas']} nova(s) movimentação(ões).")
+        db.session.commit()
         flash(
             f"Consulta concluída: {resultado['total_novas']} "
             f"movimentação(ões) nova(s) encontrada(s) em "
@@ -72,6 +75,8 @@ def limpar_alerta_processo(pk):
         lida=False,
     ).update({"lida": True}, synchronize_session=False)
     processo.alerta_pendente = False
+    db.session.commit()
+    registrar_auditoria("VISUALIZAR", "Movimentacao", processo.id, "Movimentações do processo marcadas como vistas.")
     db.session.commit()
     flash(
         "Movimentações do processo marcadas como vistas.",
