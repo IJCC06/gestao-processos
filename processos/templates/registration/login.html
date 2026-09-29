@@ -187,6 +187,11 @@
             font-size: .95rem;
         }
 
+         .login-register-link {
+            color: #2457a6;
+            font-weight: 700;
+        }
+
         .login-footer {
             margin: 24px 0 0;
             color: #98a2b3;
@@ -295,7 +300,8 @@
                     </form>
 
                     <p class="login-footer">
-                        Acesso restrito a usuários autorizados.
+                        Ainda não possui uma conta?
+                        <a class="login-register-link" href="{{ url_for('auth.cadastro') }}">Criar cadastro</a>
                     </p>
                 </div>
             </div>
