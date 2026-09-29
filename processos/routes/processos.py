@@ -159,7 +159,8 @@ def form(processo=None):
         ):
             flash("Os valores financeiros excedem o limite permitido.", "error")
         else:
-            if processo is None:
+            novo_processo = processo is None
+            if novo_processo:
                 processo = Processo()
 
             processo.cliente = cliente
@@ -179,7 +180,7 @@ def form(processo=None):
                 db.session.rollback()
                 flash("Já existe um processo com este número CNJ.", "error")
             else:
-                registrar_auditoria("ALTERAR" if processo.id else "CRIAR", "Processo", processo.id, f"Processo salvo: {processo.numero_cnj}.")
+                registrar_auditoria("CRIAR" if novo_processo else "ALTERAR", "Processo", processo.id, f"Processo salvo: {processo.numero_cnj}.")
                 db.session.commit()
                 flash("Processo salvo com sucesso.", "success")
                 return redirect(url_for("processos.detail", pk=processo.id))
