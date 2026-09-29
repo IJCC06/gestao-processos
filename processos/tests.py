@@ -238,6 +238,38 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn(b"1111111-11.2026.8.01.0001", resposta.data)
         self.assertNotIn(b"2222222-22.2026.8.02.0002", resposta.data)
 
+    def test_detalhes_do_processo_exibem_resumo_prazos_movimentacoes_e_alerta(self):
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            processo.alerta_pendente = True
+            processo.valor_causa = "1500.00"
+            processo.honorarios = "150.00"
+
+            prazo = Prazo(
+                processo=processo,
+                titulo="Manifestação",
+                data_vencimento=Config.local_date() + timedelta(days=5),
+                status=Prazo.Status.PENDENTE,
+            )
+            movimento = Movimentacao(
+                processo=processo,
+                data=Config.local_date(),
+                descricao="Intimação publicada",
+                origem="datajud",
+            )
+            db.session.add_all([prazo, movimento])
+            db.session.commit()
+
+        self.login()
+        resposta = self.client.get(f"/processos/{self.processo_id}/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Processo 0000000-00.2026.8.00.0000", resposta.data)
+        self.assertIn(b"Cliente Teste", resposta.data)
+        self.assertIn(b"Intima", resposta.data)
+        self.assertIn(b"Manifest", resposta.data)
+        self.assertIn(b"novas moviment", resposta.data)
+        self.assertIn(b"1 dia(s) restante(s).", resposta.data)
+
     def test_criacao_de_prazo(self):
         self.login()
         resposta = self.client.post(
