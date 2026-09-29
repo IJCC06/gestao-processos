@@ -16,9 +16,15 @@ Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e m
 - Autenticação de usuários
 - Dashboard
 - Cadastro de clientes com normalização e validação de CPF/CNPJ
-- Cadastro de processos
+- Cadastro de processos com validação de dados
 - Página de detalhes do processo com resumo, prazos pendentes, movimentações e alertas
 - Busca de processos por número CNJ, cliente ou tribunal
+- Validação do número CNJ conforme o formato padronizado e dígitos verificadores
+- Validação de área e status do processo
+- Validação de valores da causa e honorários, aceitando apenas valores válidos e não negativos
+- Edição de processos com preservação dos dados digitados quando houver erro
+- Exclusão de processos com remoção em cascata de prazos e movimentações vinculados
+
 - Filtros de processos por área e status
 - Cadastro de prazos
 - Área de notificações com resumo de prazos e movimentações pendentes
