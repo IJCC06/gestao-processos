@@ -199,11 +199,11 @@ class FluxosPrincipaisTests(unittest.TestCase):
         )
 
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b'Nome Digitado', resposta.data)
-        self.assertIn(b'123.456.789-00', resposta.data)
-        self.assertIn(b'Contato Digitado', resposta.data)
-        self.assertIn(b'Endereco Digitado', resposta.data)
-        self.assertIn(b'Observacao Digitada', resposta.data)
+        self.assertIn(b"Nome Digitado", resposta.data)
+        self.assertIn(b"123.456.789-00", resposta.data)
+        self.assertIn(b"Contato Digitado", resposta.data)
+        self.assertIn(b"Endereco Digitado", resposta.data)
+        self.assertIn(b"Observacao Digitada", resposta.data)
 
     def test_criacao_de_cliente_exige_nome_e_cpf_cnpj(self):
         self.login()
@@ -912,7 +912,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get("/notificacoes/")
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Nenhuma movimentacao nova pendente", resposta.data)
+        self.assertIn("Nenhuma movimentação nova pendente.".encode("utf-8"), resposta.data)
 
 
 if __name__ == "__main__":
