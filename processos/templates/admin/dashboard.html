@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Administração | Gestão de Processos{% endblock %}
+{% block heading %}Painel administrativo{% endblock %}
+{% block content %}
+<section class="stats-grid admin-stats" aria-label="Resumo administrativo">
+  <div class="stat-card"><span class="stat-label">Usuários</span><span class="stat-number">{{ total_usuarios }}</span><span class="stat-link">{{ usuarios_ativos }} ativo(s)</span></div>
+  <div class="stat-card"><span class="stat-label">Administradores</span><span class="stat-number">{{ usuarios_admin }}</span><span class="stat-link">Contas com acesso administrativo</span></div>
+  <div class="stat-card"><span class="stat-label">Clientes</span><span class="stat-number">{{ total_clientes }}</span><span class="stat-link">Base cadastrada</span></div>
+  <div class="stat-card"><span class="stat-label">Processos</span><span class="stat-number">{{ total_processos }}</span><span class="stat-link">{{ processos_ativos }} ativo(s)</span></div>
+</section>
+
+<div class="dashboard-columns">
+  <section class="dashboard-section">
+    <div class="section-heading"><h2>Situação do sistema</h2><span class="section-count">Visão rápida</span></div>
+    <div class="admin-status-grid">
+      <div class="card admin-status-card"><strong>DataJud</strong><span class="status-pill {{ 'ok' if datajud_configurado else 'warning' }}">{{ 'Configurado' if datajud_configurado else 'Chave não configurada' }}</span><p>A chave é lida do arquivo de ambiente e nunca é exibida no painel.</p></div>
+      <div class="card admin-status-card"><strong>Prazos pendentes</strong><span class="status-number">{{ prazos_pendentes }}</span><p>Consulte os detalhes no painel operacional.</p></div>
+      <div class="card admin-status-card"><strong>Alertas</strong><span class="status-number">{{ alertas_pendentes }}</span><p>Processos com novas movimentações não visualizadas.</p></div>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="section-heading"><h2>Ações administrativas</h2></div>
+    <div class="admin-action-grid">
+      <a class="card admin-action-card" href="{{ url_for('admin.usuarios') }}"><strong>Gerenciar usuários</strong><span>Ative, desative e altere permissões das contas.</span></a>
+      <a class="card admin-action-card" href="{{ url_for('admin.criar_usuario') }}"><strong>Criar usuário</strong><span>Cadastre uma conta diretamente pela administração.</span></a>
+    </div>
+  </section>
+</div>
+
+<section class="dashboard-section">
+  <div class="section-heading"><h2>Usuários recentes</h2><a href="{{ url_for('admin.usuarios') }}">Ver todos →</a></div>
+  <div class="card movements-card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for usuario in usuarios_recentes %}
+          <tr>
+            <td><strong>{{ usuario.username }}</strong></td>
+            <td>{{ "Administrador" if usuario.is_admin else "Usuário" }}</td>
+            <td><span class="status-pill {{ 'ok' if usuario.is_active else 'off' }}">{{ "Ativo" if usuario.is_active else "Desativado" }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3">Nenhum usuário cadastrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
