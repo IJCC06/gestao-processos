@@ -72,31 +72,6 @@ def register_blueprints(app):
 
 
 def register_cli(app):
-    @app.cli.command("migrar-usuarios")
-    def migrar_usuarios_cli():
-        """Adiciona as colunas de administração à tabela de usuários existente."""
-        import click
-        from sqlalchemy import inspect, text
-
-        if not db.engine.url.drivername.startswith("sqlite"):
-            click.echo("Migração automática disponível apenas para SQLite.")
-            return
-
-        with app.app_context():
-            colunas = {col["name"] for col in inspect(db.engine).get_columns("usuario")}
-            with db.engine.begin() as conexao:
-                if "is_admin" not in colunas:
-                    conexao.execute(
-                        text("ALTER TABLE usuario ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0")
-                    )
-                    click.echo("Coluna is_admin adicionada.")
-                if "is_active" not in colunas:
-                    conexao.execute(
-                        text("ALTER TABLE usuario ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1")
-                    )
-                    click.echo("Coluna is_active adicionada.")
-            click.echo("Migração de usuários concluída.")
-
     @app.cli.command("tornar-admin")
     def tornar_admin_cli():
         """Concede permissão de administrador a um usuário existente."""
