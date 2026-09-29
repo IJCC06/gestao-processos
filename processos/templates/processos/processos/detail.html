@@ -32,6 +32,7 @@
         <p>
             <a href="{{ url_for('processos.update', pk=processo.id) }}">Editar processo</a>
             <a href="{{ url_for('prazos.create', processo=processo.id) }}">Novo prazo</a>
+            <a href="{{ url_for('processos.delete', pk=processo.id) }}">Excluir processo</a>
         </p>
         <form method="post" action="{{ url_for('processos.atualizar_movimentacoes', pk=processo.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
