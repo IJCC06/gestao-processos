@@ -98,13 +98,6 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self._perf_login_total += time.perf_counter() - start
         return resposta
 
-    def _login_unused_placeholder(self):
-        return self.client.post(
-            "/login/",
-            data={"username": "teste", "password": "senha-segura-123"},
-            follow_redirects=False,
-        )
-
     def test_dashboard_exige_login(self):
         resposta = self.client.get("/")
         self.assertEqual(resposta.status_code, 302)
