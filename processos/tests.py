@@ -684,6 +684,25 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.assertEqual(processo.datajud_ultimo_erro, "DataJud indisponivel")
             self.assertIsNotNone(processo.datajud_ultima_consulta_em)
 
+    @patch("processos.services.datajud.requests.post")
+    def test_datajud_nao_expoe_detalhes_tecnicos_do_erro(self, post):
+        from processos.services.datajud import DataJudError, consultar_movimentacoes
+        import requests
+
+        post.side_effect = requests.RequestException("detalhe interno da biblioteca")
+
+        with self.assertRaises(DataJudError) as contexto:
+            consultar_movimentacoes(
+                "0000000-49.2026.8.00.0000",
+                "tst",
+            )
+
+        self.assertEqual(
+            str(contexto.exception),
+            "Falha de comunicação com o DataJud. Tente novamente.",
+        )
+        self.assertNotIn("detalhe interno", str(contexto.exception))
+
     @patch("processos.services.movimentacoes.consultar_movimentacoes")
     def test_atualizacao_individual_datajud_retorna_erro(self, consultar):
         from processos.services.datajud import DataJudError
