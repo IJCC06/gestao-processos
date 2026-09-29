@@ -33,6 +33,7 @@ def create_app():
         static_folder="processos/static",
     )
     app.config.from_object(Config)
+    Config.validate_security()
 
     if os.environ.get("DATABASE_URL"):
         app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
