@@ -1,3 +1,11 @@
+from datetime import datetime, timezone
+
+from flask_login import UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from .extensions import db
+
+
 class Auditoria(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
@@ -11,14 +19,6 @@ class Auditoria(db.Model):
         nullable=False,
     )
     usuario = db.relationship("Usuario", backref="auditorias")
-
-
-from datetime import datetime, timezone
-
-from flask_login import UserMixin
-from werkzeug.security import check_password_hash, generate_password_hash
-
-from .extensions import db
 
 
 class Usuario(UserMixin, db.Model):
