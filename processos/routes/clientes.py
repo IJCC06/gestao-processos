@@ -57,7 +57,7 @@ def list():
 
     pagina = request.args.get("page", 1, type=int)
     pagina = max(pagina, 1)
-    clientes = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
+    clientes = db.paginate(db.select(Cliente).filter(consulta.whereclause).order_by(Cliente.nome) if consulta.whereclause is not None else db.select(Cliente).order_by(Cliente.nome), page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/clientes/list.html",
