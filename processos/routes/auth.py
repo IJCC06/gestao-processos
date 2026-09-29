@@ -13,14 +13,38 @@ def login():
         return redirect(url_for("dashboard.index"))
 
     if request.method == "POST":
+        import time
+
+        perf_start = time.perf_counter()
+        perf_usuario_start = time.perf_counter()
         usuario = Usuario.query.filter_by(
             username=request.form.get("username", "").strip()
         ).first()
+        perf_usuario = time.perf_counter() - perf_usuario_start
 
-        if usuario and usuario.check_password(request.form.get("password", "")):
+        if usuario:
+            perf_senha_start = time.perf_counter()
+            senha_valida = usuario.check_password(request.form.get("password", ""))
+            perf_senha = time.perf_counter() - perf_senha_start
+        else:
+            senha_valida = False
+            perf_senha = 0.0
+
+        if usuario and senha_valida:
+            perf_login_user_start = time.perf_counter()
             login_user(usuario)
+            perf_login_user = time.perf_counter() - perf_login_user_start
 
+            perf_movimentacoes_start = time.perf_counter()
             resultado = verificar_movimentacoes()
+            perf_movimentacoes = time.perf_counter() - perf_movimentacoes_start
+            print(
+                f"[PERF-LOGIN] usuario={perf_usuario:.4f}s | "
+                f"senha={perf_senha:.4f}s | "
+                f"login_user={perf_login_user:.4f}s | "
+                f"movimentacoes={perf_movimentacoes:.4f}s | "
+                f"total={time.perf_counter() - perf_start:.4f}s"
+            )
             if resultado["erros"]:
                 flash(
                     f"Consulta de movimentações concluída com "
