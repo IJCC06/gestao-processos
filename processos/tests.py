@@ -623,6 +623,39 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.assertEqual(Movimentacao.query.count(), 1)
 
     @patch("processos.services.movimentacoes.consultar_movimentacoes")
+    def test_consulta_datajud_registra_ultima_consulta_com_sucesso(self, consultar):
+        consultar.return_value = []
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            antes = datetime.now(timezone.utc)
+            resultado = verificar_movimentacao_processo(processo)
+            depois = datetime.now(timezone.utc)
+
+            self.assertEqual(resultado["erro"], None)
+            self.assertEqual(processo.datajud_ultimo_status, "sucesso")
+            self.assertIsNone(processo.datajud_ultimo_erro)
+            self.assertIsNotNone(processo.datajud_ultima_consulta_em)
+            self.assertGreaterEqual(processo.datajud_ultima_consulta_em, antes)
+            self.assertLessEqual(processo.datajud_ultima_consulta_em, depois)
+
+    @patch("processos.services.movimentacoes.consultar_movimentacoes")
+    def test_consulta_datajud_registra_erro_e_horario(self, consultar):
+        from processos.services.datajud import DataJudError
+
+        consultar.side_effect = DataJudError("DataJud indisponivel")
+
+        with self.app.app_context():
+            processo = db.session.get(Processo, self.processo_id)
+            resultado = verificar_movimentacao_processo(processo)
+
+            self.assertEqual(resultado["total_novas"], 0)
+            self.assertEqual(resultado["erro"], "DataJud indisponivel")
+            self.assertEqual(processo.datajud_ultimo_status, "erro")
+            self.assertEqual(processo.datajud_ultimo_erro, "DataJud indisponivel")
+            self.assertIsNotNone(processo.datajud_ultima_consulta_em)
+
+    @patch("processos.services.movimentacoes.consultar_movimentacoes")
     def test_atualizacao_individual_datajud_retorna_erro(self, consultar):
         from processos.services.datajud import DataJudError
 
