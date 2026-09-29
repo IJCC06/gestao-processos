@@ -1,5 +1,6 @@
 import os
 
+import click
 from dotenv import load_dotenv
 from flask import Flask
 from flask_login import LoginManager, current_user
@@ -98,8 +99,6 @@ def register_cli(app):
     )
     def backup_db_cli(retention_days):
         """Cria um backup consistente do banco SQLite."""
-        import click
-
         from processos.services.backup import BackupError, backup_sqlite
 
         database_uri = app.config["SQLALCHEMY_DATABASE_URI"]
