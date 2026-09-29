@@ -22,6 +22,10 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit">Sair</button>
         </form>
+        <form class="dashboard-logout" method="post" action="{{ url_for('sistema.encerrar') }}" onsubmit="return confirm('Deseja encerrar o sistema?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit">Encerrar sistema</button>
+        </form>
       </div>
     </header>
 
