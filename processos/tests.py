@@ -306,6 +306,29 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.assertIsNotNone(db.session.get(Cliente, self.cliente_id))
             self.assertIsNotNone(db.session.get(Processo, self.processo_id))
 
+    def test_lista_de_processos_exibe_dados_e_filtros(self):
+        self.login()
+
+        resposta = self.client.get("/processos/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"0000000-49.2026.8.00.0000", resposta.data)
+        self.assertIn(b"Cliente Teste", resposta.data)
+        self.assertIn(b"Novo processo", resposta.data)
+
+        resposta = self.client.get(
+            "/processos/",
+            query_string={"q": "CNJ que nao existe"},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Nenhum processo encontrado.", resposta.data)
+
+        resposta = self.client.get(
+            "/processos/",
+            query_string={"status": Processo.Status.ATIVO},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"0000000-49.2026.8.00.0000", resposta.data)
+
     def test_criacao_de_processo(self):
         self.login()
         resposta = self.client.post(
