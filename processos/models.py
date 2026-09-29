@@ -87,6 +87,7 @@ class Movimentacao(db.Model):
     descricao = db.Column(db.Text, nullable=False)
     origem = db.Column(db.String(50), default="datajud", nullable=False)
     criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    lida = db.Column(db.Boolean, default=False, nullable=False)
     processo = db.relationship("Processo", back_populates="movimentacoes")
 
 
