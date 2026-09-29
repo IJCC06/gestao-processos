@@ -53,26 +53,38 @@ def backup_sqlite(
     temporary = destination.with_suffix(".tmp")
 
     try:
-        with sqlite3.connect(str(source_path), timeout=30) as source:
-            with sqlite3.connect(str(temporary)) as target:
-                source.backup(target)
-                integrity = target.execute("PRAGMA integrity_check").fetchone()
+        source = sqlite3.connect(str(source_path), timeout=30)
+        target = sqlite3.connect(str(temporary))
+        try:
+            source.backup(target)
+            target.commit()
+            integrity = target.execute("PRAGMA integrity_check").fetchone()
+        finally:
+            target.close()
+            source.close()
 
         if not integrity or integrity[0] != "ok":
-            raise BackupError("O backup foi criado, mas falhou na verificação de integridade.")
+            raise BackupError(
+                "O backup foi criado, mas falhou na verificação de integridade."
+            )
 
         temporary.replace(destination)
         _remove_old_backups(destination_dir, retention_days, current_time)
         return destination
     except BackupError:
         if temporary.exists():
-            temporary.unlink()
+            try:
+                temporary.unlink()
+            except OSError:
+                pass
         raise
     except (OSError, sqlite3.Error) as exc:
         if temporary.exists():
-            temporary.unlink()
+            try:
+                temporary.unlink()
+            except OSError:
+                pass
         raise BackupError(f"Não foi possível criar o backup: {exc}") from exc
-
 
 def _remove_old_backups(
     backup_dir: Path,
