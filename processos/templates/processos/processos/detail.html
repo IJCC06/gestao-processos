@@ -6,32 +6,70 @@
     <title>{{ processo.numero_cnj }} | Gestão de Processos</title>
 </head>
 <body>
-    <a href="{{ url_for('processos.list') }}">Processos</a>
-    <h1>{{ processo.numero_cnj }}</h1>
-    <p>{{ processo.cliente.nome }}</p>
-    <p>{{ processo.area_display() }} — {{ processo.status_display() }}</p>
-    <p>{{ processo.tribunal or '—' }}</p>
-    <p>
-        <a href="{{ url_for('processos.update', pk=processo.id) }}">Editar</a>
-        <a href="{{ url_for('prazos.create', processo=processo.id) }}">Novo prazo</a>
-    </p>
+    <nav>
+        <a href="{{ url_for('processos.list') }}">Processos</a>
+    </nav>
 
-    <h2>Prazos</h2>
-    {% for prazo in processo.prazos %}
+    <header>
+        <h1>Processo {{ processo.numero_cnj }}</h1>
+        <p><strong>Cliente:</strong> {{ processo.cliente.nome }}</p>
+        <p><strong>Área:</strong> {{ processo.area_display() }}</p>
+        <p><strong>Status:</strong> {{ processo.status_display() }}</p>
+        <p><strong>Tribunal:</strong> {{ processo.tribunal or 'Não informado' }}</p>
+        <p><strong>Fase:</strong> {{ processo.fase or 'Não informada' }}</p>
+        <p><strong>Alias DataJud:</strong> {{ processo.tribunal_alias or 'Não configurado' }}</p>
+        {% if processo.alerta_pendente %}
+            <p><strong>Alerta:</strong> Há novas movimentações para este processo.</p>
+        {% else %}
+            <p><strong>Alerta:</strong> Nenhuma movimentação nova pendente.</p>
+        {% endif %}
         <p>
-            <a href="{{ url_for('prazos.detail', pk=prazo.id) }}">{{ prazo.titulo }}</a>
-            — {{ prazo.data_vencimento.strftime('%d/%m/%Y') }}
-            — {{ prazo.status_display() }}
+            <a href="{{ url_for('processos.update', pk=processo.id) }}">Editar processo</a>
+            <a href="{{ url_for('prazos.create', processo=processo.id) }}">Novo prazo</a>
         </p>
-    {% else %}
-        <p>Nenhum prazo.</p>
-    {% endfor %}
+    </header>
 
-    <h2>Movimentações</h2>
-    {% for m in processo.movimentacoes %}
-        <p>{{ m.data.strftime('%d/%m/%Y %H:%M') }} — {{ m.descricao }} — {{ m.origem }}</p>
-    {% else %}
-        <p>Nenhuma movimentação.</p>
-    {% endfor %}
+    <section>
+        <h2>Resumo</h2>
+        <p><strong>Movimentações:</strong> {{ processo.movimentacoes|length }}</p>
+        <p><strong>Prazos pendentes:</strong> {{ prazos_pendentes|length }}</p>
+        {% if processo.valor_causa is not none %}
+            <p><strong>Valor da causa:</strong> R$ {{ '%.2f'|format(processo.valor_causa|float) }}</p>
+        {% endif %}
+        {% if processo.honorarios is not none %}
+            <p><strong>Honorários:</strong> R$ {{ '%.2f'|format(processo.honorarios|float) }}</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Prazos pendentes</h2>
+        {% for prazo in prazos_pendentes %}
+            <article>
+                <p>
+                    <a href="{{ url_for('prazos.detail', pk=prazo.id) }}">{{ prazo.titulo }}</a>
+                    — vencimento: {{ prazo.data_vencimento.strftime('%d/%m/%Y') }}
+                    — {{ prazo.status_display() }}
+                </p>
+                <p>{{ prazo.dias_restantes }} dia(s) restante(s).</p>
+            </article>
+        {% else %}
+            <p>Nenhum prazo pendente.</p>
+        {% endfor %}
+    </section>
+
+    <section>
+        <h2>Movimentações</h2>
+        {% for movimento in processo.movimentacoes %}
+            <article>
+                <p>
+                    <strong>{{ movimento.data.strftime('%d/%m/%Y %H:%M') }}</strong>
+                    — {{ movimento.descricao }}
+                </p>
+                <p>Origem: {{ movimento.origem }}</p>
+            </article>
+        {% else %}
+            <p>Nenhuma movimentação registrada.</p>
+        {% endfor %}
+    </section>
 </body>
 </html>
