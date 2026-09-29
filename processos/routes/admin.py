@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 
 from processos.extensions import db
 from processos.models import Cliente, Movimentacao, Prazo, Processo, Usuario
+from processos.services.auditoria import registrar_auditoria
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -80,6 +81,8 @@ def criar_usuario():
             usuario.set_password(password)
             db.session.add(usuario)
             db.session.commit()
+            registrar_auditoria("CRIAR", "Usuario", usuario.id, f"Usuário criado: {usuario.username}. Administrador: {usuario.is_admin}.")
+            db.session.commit()
             flash("Usuário criado com sucesso.", "success")
             return redirect(url_for("admin.usuarios"))
 
@@ -105,6 +108,8 @@ def alternar_status(pk):
     usuario.is_active = not usuario.is_active
     db.session.commit()
     estado = "ativado" if usuario.is_active else "desativado"
+    registrar_auditoria("STATUS", "Usuario", usuario.id, f"Conta {estado}.")
+    db.session.commit()
     flash(f"Usuário {estado} com sucesso.", "success")
     return redirect(url_for("admin.usuarios"))
 
@@ -126,6 +131,8 @@ def redefinir_senha(pk):
             flash("As senhas não coincidem.", "error")
         else:
             usuario.set_password(password)
+            db.session.commit()
+            registrar_auditoria("ALTERAR", "Usuario", usuario.id, "Senha redefinida por administrador.")
             db.session.commit()
             flash("Senha redefinida com sucesso.", "success")
             return redirect(url_for("admin.usuarios"))
@@ -151,6 +158,8 @@ def alternar_admin(pk):
         usuario.is_admin = True
         mensagem = "Permissão de administrador concedida."
 
+    db.session.commit()
+    registrar_auditoria("PERMISSAO", "Usuario", usuario.id, mensagem)
     db.session.commit()
     flash(mensagem, "success")
     return redirect(url_for("admin.usuarios"))
