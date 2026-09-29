@@ -22,7 +22,15 @@ class FluxosPrincipaisTests(unittest.TestCase):
         from app import create_app
 
         cls.app = create_app()
-        cls.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+        cls.app.config.update(
+            TESTING=True,
+            WTF_CSRF_ENABLED=False,
+            PROPAGATE_EXCEPTIONS=False,
+        )
+
+        @cls.app.get("/__teste-erro-500")
+        def _teste_erro_500():
+            raise RuntimeError("erro de teste")
 
     @classmethod
     def tearDownClass(cls):
@@ -95,6 +103,27 @@ class FluxosPrincipaisTests(unittest.TestCase):
         )
         self._perf_login_total += time.perf_counter() - start
         return resposta
+
+    def test_pagina_404_personalizada(self):
+        self.login()
+        resposta = self.client.get("/rota-que-nao-existe/")
+        self.assertEqual(resposta.status_code, 404)
+        self.assertIn(b"Pagina nao encontrada", resposta.data)
+        self.assertIn(b"Voltar ao painel", resposta.data)
+
+    def test_pagina_403_personalizada(self):
+        self.login()
+        resposta = self.client.get("/admin/")
+        self.assertEqual(resposta.status_code, 403)
+        self.assertIn(b"Acesso nao autorizado", resposta.data)
+        self.assertIn(b"Voce nao tem permissao", resposta.data)
+
+    def test_pagina_500_personalizada(self):
+        self.login()
+        resposta = self.client.get("/__teste-erro-500")
+        self.assertEqual(resposta.status_code, 500)
+        self.assertIn(b"Erro interno", resposta.data)
+        self.assertIn(b"Ocorreu um erro inesperado", resposta.data)
 
     def test_cadastro_publico_esta_bloqueado(self):
         resposta = self.client.get("/cadastro/")
