@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy.exc import IntegrityError
 
 from processos.extensions import db
 from processos.models import Cliente
@@ -46,9 +47,20 @@ def form(cliente=None):
     if request.method == "POST":
         nome = request.form.get("nome", "").strip()
         cpf = request.form.get("cpf_cnpj", "").strip()
+        contato = request.form.get("contato", "").strip()
+        endereco = request.form.get("endereco", "").strip()
+        observacoes = request.form.get("observacoes", "").strip()
 
         if not nome or not cpf:
             flash("Informe o nome e o CPF/CNPJ.", "error")
+        elif len(nome) > 200:
+            flash("O nome do cliente deve ter no máximo 200 caracteres.", "error")
+        elif len(cpf) > 20:
+            flash("O CPF/CNPJ deve ter no máximo 20 caracteres.", "error")
+        elif len(contato) > 100:
+            flash("O contato deve ter no máximo 100 caracteres.", "error")
+        elif len(endereco) > 300:
+            flash("O endereço deve ter no máximo 300 caracteres.", "error")
         elif Cliente.query.filter(
             Cliente.cpf_cnpj == cpf,
             Cliente.id != (cliente.id if cliente else 0),
@@ -60,14 +72,19 @@ def form(cliente=None):
 
             cliente.nome = nome
             cliente.cpf_cnpj = cpf
-            cliente.contato = request.form.get("contato", "").strip()
-            cliente.endereco = request.form.get("endereco", "").strip()
-            cliente.observacoes = request.form.get("observacoes", "").strip()
+            cliente.contato = contato
+            cliente.endereco = endereco
+            cliente.observacoes = observacoes
 
             db.session.add(cliente)
-            db.session.commit()
-            flash("Cliente salvo com sucesso.", "success")
-            return redirect(url_for("clientes.detail", pk=cliente.id))
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash("Já existe um cliente com este CPF/CNPJ.", "error")
+            else:
+                flash("Cliente salvo com sucesso.", "success")
+                return redirect(url_for("clientes.detail", pk=cliente.id))
 
     return render_template(
         "processos/clientes/form.html",
