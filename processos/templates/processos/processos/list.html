@@ -12,6 +12,13 @@
 
     <h1>Processos</h1>
 
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensagem in mensagens %}
+            <p>{{ mensagem }}</p>
+        {% endfor %}
+    {% endwith %}
+
+
     <p><a href="{{ url_for('processos.create') }}">+ Novo processo</a></p>
 
     <form method="get">
