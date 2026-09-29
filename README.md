@@ -117,6 +117,33 @@ Os testes utilizam SQLite em memória para não alterar o banco local de desenvo
     ├── .gitignore
     └── requirements.txt
 
+## Abertura simplificada no Windows
+
+Para o uso diario, nao e necessario abrir o CMD ou executar comandos do Flask.
+
+### Primeira configuracao
+
+Depois que o projeto estiver instalado e o ambiente virtual estiver criado, execute uma unica vez:
+
+    scripts\criar_atalho_desktop.vbs
+
+Isso cria na Area de Trabalho o atalho **Gestao de Processos**.
+
+### Uso diario
+
+Basta dar dois cliques no atalho **Gestao de Processos**. O inicializador:
+
+1. verifica o ambiente virtual;
+2. inicia o servidor Flask sem abrir uma janela do CMD;
+3. espera o sistema ficar disponivel;
+4. abre automaticamente o navegador em http://127.0.0.1:5000/.
+
+Se o sistema ja estiver aberto, o inicializador apenas abre o navegador.
+
+Os detalhes de inicializacao ficam registrados em `logs\launcher.log`, sem exibir informacoes tecnicas para o usuario.
+
+> **Importante:** esta configuracao foi feita para o uso local no computador onde o sistema esta instalado. O banco SQLite e os arquivos do sistema permanecem nesse computador.
+
 ## Backup do banco SQLite
 
 O sistema possui backup manual e pode ser configurado para executar backups automaticamente no Windows. O backup usa a API nativa do SQLite, gerando uma cópia consistente mesmo enquanto a aplicação está em execução.
