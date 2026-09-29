@@ -59,8 +59,8 @@ def form(processo=None):
     clientes = Cliente.query.order_by(Cliente.nome).all()
 
     if request.method == "POST":
-        cliente = Cliente.query.get(
-            request.form.get("cliente", type=int)
+        cliente = db.session.get(
+            Cliente, request.form.get("cliente", type=int)
         )
         numero = request.form.get("numero_cnj", "").strip()
 
