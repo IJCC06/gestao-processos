@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+{% block title %}Novo usuário | Administração{% endblock %}
+{% block heading %}Novo usuário{% endblock %}
+{% block content %}
+<div class="card admin-form-card">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="username">Nome de usuário</label><input id="username" name="username" value="{{ username }}" minlength="3" maxlength="150" required autofocus></div>
+    <div class="form-grid">
+      <div class="field"><label for="password">Senha</label><input id="password" type="password" name="password" minlength="8" required></div>
+      <div class="field"><label for="password_confirmation">Confirmar senha</label><input id="password_confirmation" type="password" name="password_confirmation" minlength="8" required></div>
+    </div>
+    <label class="checkbox-field"><input type="checkbox" name="is_admin" value="1" {% if is_admin %}checked{% endif %}> Conceder permissão de administrador</label>
+    <div class="form-actions"><button type="submit">Criar usuário</button><a class="button secondary" href="{{ url_for('admin.usuarios') }}">Cancelar</a></div>
+  </form>
+</div>
+{% endblock %}
