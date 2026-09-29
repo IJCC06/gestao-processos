@@ -170,7 +170,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         )
 
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"JÃ¡ existe um cliente com este CPF/CNPJ.", resposta.data)
+        self.assertIn(b"J\\xc3\\xa1 existe um cliente com este CPF/CNPJ.", resposta.data)
 
         with self.app.app_context():
             self.assertEqual(Cliente.query.count(), 1)
