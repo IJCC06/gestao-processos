@@ -232,7 +232,7 @@ def atualizar_movimentacoes(pk):
         )
     else:
         db.session.commit()
-        registrar_auditoria("DATAJUD", "Processo", processo.id, f"Consulta DataJud: {resultado["total_novas"]} nova(s) movimentação(ões).")
+        registrar_auditoria("DATAJUD", "Processo", processo.id, f"Consulta DataJud: {resultado['total_novas']} nova(s) movimentação(ões).")
         db.session.commit()
         flash(
             f"Consulta concluída: {resultado['total_novas']} "
