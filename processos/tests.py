@@ -47,6 +47,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             db.session.remove()
             db.drop_all()
             db.session.remove()
+            db.engine.dispose()
 
         os.unlink(self.db_file.name)
         os.environ.pop("DATABASE_URL", None)
