@@ -98,12 +98,16 @@ def form(prazo=None):
 @login_required
 def list():
     status = request.args.get("status", "").strip()
-    prazos = Prazo.query.order_by(
+    consulta = Prazo.query.order_by(
         Prazo.data_vencimento, Prazo.titulo
-    ).all()
+    )
 
     if status in Prazo.Status.values():
-        prazos = [prazo for prazo in prazos if prazo.status == status]
+        consulta = consulta.filter(Prazo.status == status)
+
+    pagina = request.args.get("page", 1, type=int)
+    pagina = max(pagina, 1)
+    prazos = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/prazos/list.html",
