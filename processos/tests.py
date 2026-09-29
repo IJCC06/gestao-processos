@@ -96,6 +96,66 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self._perf_login_total += time.perf_counter() - start
         return resposta
 
+    def test_cadastro_exibe_formulario(self):
+        resposta = self.client.get("/cadastro/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("Criar sua conta".encode("utf-8"), resposta.data)
+        self.assertIn(b"username", resposta.data)
+
+    def test_cadastro_cria_usuario_com_senha_hash(self):
+        resposta = self.client.post(
+            "/cadastro/",
+            data={
+                "username": "novo-usuario",
+                "password": "senha-segura-123",
+                "password_confirmation": "senha-segura-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/login/", resposta.location)
+
+        with self.app.app_context():
+            usuario = Usuario.query.filter_by(username="novo-usuario").first()
+            self.assertIsNotNone(usuario)
+            self.assertNotEqual(usuario.password_hash, "senha-segura-123")
+            self.assertTrue(usuario.check_password("senha-segura-123"))
+
+    def test_cadastro_rejeita_usuario_duplicado(self):
+        resposta = self.client.post(
+            "/cadastro/",
+            data={
+                "username": "teste",
+                "password": "senha-segura-123",
+                "password_confirmation": "senha-segura-123",
+            },
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("já está em uso".encode("utf-8"), resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Usuario.query.filter_by(username="teste").count(), 1)
+
+    def test_cadastro_rejeita_senha_curta_e_confirmacao_diferente(self):
+        resposta = self.client.post(
+            "/cadastro/",
+            data={
+                "username": "usuario-novo",
+                "password": "123",
+                "password_confirmation": "456",
+            },
+        )
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("pelo menos 8 caracteres".encode("utf-8"), resposta.data)
+
+        with self.app.app_context():
+            self.assertIsNone(Usuario.query.filter_by(username="usuario-novo").first())
+
+    def test_cadastro_nao_exibe_formulario_para_usuario_logado(self):
+        self.login()
+        resposta = self.client.get("/cadastro/")
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/", resposta.location)
+
     def test_dashboard_exige_login(self):
         resposta = self.client.get("/")
         self.assertEqual(resposta.status_code, 302)
