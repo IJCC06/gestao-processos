@@ -2,8 +2,9 @@ import os
 
 import click
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, render_template
 from flask_login import LoginManager, current_user
+from werkzeug.exceptions import HTTPException
 from flask_wtf import CSRFProtect
 
 from config.settings import Config
@@ -48,6 +49,7 @@ def create_app():
     csrf.init_app(app)
 
     register_routes(app)
+    register_error_handlers(app)
     register_blueprints(app)
     register_cli(app)
     return app
@@ -56,6 +58,36 @@ def create_app():
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(Usuario, int(user_id))
+
+
+def register_error_handlers(app):
+    @app.errorhandler(403)
+    def forbidden(error):
+        return render_template(
+            "errors/403.html",
+            codigo=403,
+            titulo="Acesso não autorizado",
+            mensagem="Você não tem permissão para acessar esta página.",
+        ), 403
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return render_template(
+            "errors/404.html",
+            codigo=404,
+            titulo="Página não encontrada",
+            mensagem="A página que você tentou acessar não existe ou foi removida.",
+        ), 404
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        db.session.rollback()
+        return render_template(
+            "errors/500.html",
+            codigo=500,
+            titulo="Erro interno",
+            mensagem="Ocorreu um erro inesperado. Tente novamente. Se o problema persistir, verifique os logs do sistema.",
+        ), 500
 
 
 def register_routes(app):
