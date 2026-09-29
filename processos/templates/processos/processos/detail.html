@@ -6,6 +6,12 @@
     <title>{{ processo.numero_cnj }} | Gestão de Processos</title>
 </head>
 <body>
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensagem in mensagens %}
+            <p>{{ mensagem }}</p>
+        {% endfor %}
+    {% endwith %}
+
     <nav>
         <a href="{{ url_for('processos.list') }}">Processos</a>
     </nav>
@@ -27,6 +33,10 @@
             <a href="{{ url_for('processos.update', pk=processo.id) }}">Editar processo</a>
             <a href="{{ url_for('prazos.create', processo=processo.id) }}">Novo prazo</a>
         </p>
+        <form method="post" action="{{ url_for('processos.atualizar_movimentacoes', pk=processo.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Atualizar movimentações no DataJud</button>
+        </form>
     </header>
 
     <section>
