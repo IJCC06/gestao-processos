@@ -29,6 +29,8 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
 
+    next_url = _safe_next_url(request.args.get("next"))
+
     if request.method == "POST":
         usuario = Usuario.query.filter_by(
             username=request.form.get("username", "").strip()
@@ -47,7 +49,6 @@ def login():
                 login_user(usuario)
                 registrar_auditoria("LOGIN", "Usuario", usuario.id, "Login realizado.")
                 db.session.commit()
-                next_url = _safe_next_url(request.args.get("next"))
                 return redirect(next_url or url_for("dashboard.index"))
 
         if not usuario or not senha_valida:
