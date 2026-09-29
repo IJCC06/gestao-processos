@@ -313,7 +313,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             cliente = Cliente(nome="Maria de Souza", cpf_cnpj="98765432100")
             processo_suspenso = Processo(
                 cliente=cliente,
-                numero_cnj="1111111-63.2026.8.01.0001",
+                numero_cnj="1111111-69.2026.8.01.0001",
                 area=Processo.Area.TRABALHISTA,
                 tribunal="TRT da 2ª Região",
                 tribunal_alias="trt2",
@@ -321,7 +321,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             )
             processo_arquivado = Processo(
                 cliente=cliente,
-                numero_cnj="2222222-76.2026.8.02.0002",
+                numero_cnj="2222222-89.2026.8.02.0002",
                 area=Processo.Area.PREVIDENCIARIO,
                 tribunal="TRF da 3ª Região",
                 tribunal_alias="trf3",
@@ -334,21 +334,21 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get("/processos/", query_string={"q": "Maria de Souza"})
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
-        self.assertIn(b"2222222-76.2026.8.02.0002", resposta.data)
+        self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
+        self.assertIn(b"2222222-89.2026.8.02.0002", resposta.data)
         self.assertNotIn(b"0000000-49.2026.8.00.0000", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"q": "TRT da 2"})
-        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
-        self.assertNotIn(b"2222222-76.2026.8.02.0002", resposta.data)
+        self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
+        self.assertNotIn(b"2222222-89.2026.8.02.0002", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"status": Processo.Status.SUSPENSO})
-        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
+        self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
         self.assertNotIn(b"0000000-49.2026.8.00.0000", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"area": Processo.Area.PREVIDENCIARIO})
-        self.assertIn(b"2222222-76.2026.8.02.0002", resposta.data)
-        self.assertNotIn(b"1111111-63.2026.8.01.0001", resposta.data)
+        self.assertIn(b"2222222-89.2026.8.02.0002", resposta.data)
+        self.assertNotIn(b"1111111-69.2026.8.01.0001", resposta.data)
 
         resposta = self.client.get(
             "/processos/",
@@ -358,8 +358,8 @@ class FluxosPrincipaisTests(unittest.TestCase):
                 "area": Processo.Area.TRABALHISTA,
             },
         )
-        self.assertIn(b"1111111-63.2026.8.01.0001", resposta.data)
-        self.assertNotIn(b"2222222-76.2026.8.02.0002", resposta.data)
+        self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
+        self.assertNotIn(b"2222222-89.2026.8.02.0002", resposta.data)
 
     def test_detalhes_do_processo_exibem_resumo_prazos_movimentacoes_e_alerta(self):
         with self.app.app_context():
