@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -14,6 +15,9 @@ class Config:
         f"sqlite:///{BASE_DIR / 'flask.db'}",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+    LOG_FILE = os.environ.get("LOG_FILE", str(BASE_DIR / "logs" / "app.log"))
+
     DEBUG = os.environ.get("FLASK_DEBUG", "False").lower() in {
         "1", "true", "yes", "on",
     }
