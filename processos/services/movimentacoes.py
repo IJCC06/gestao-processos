@@ -6,9 +6,60 @@ from processos.models import Movimentacao, Processo
 from processos.services.datajud import DataJudError, consultar_movimentacoes
 
 
+def verificar_movimentacao_processo(processo):
+    """Consulta um processo no DataJud e grava apenas movimentações novas."""
+    if not processo.tribunal_alias:
+        return {"total_novas": 0, "erro": "Tribunal/alias DataJud não configurado."}
+
+    try:
+        movimentos = consultar_movimentacoes(
+            processo.numero_cnj, processo.tribunal_alias
+        )
+    except DataJudError as exc:
+        return {"total_novas": 0, "erro": str(exc)}
+
+    novas = 0
+    for mov in movimentos:
+        data_hora_str = mov.get("dataHora")
+        if not data_hora_str:
+            continue
+
+        try:
+            data_hora = datetime.fromisoformat(data_hora_str.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+
+        descricao = mov.get("nome") or "Movimentação sem descrição"
+        existente = Movimentacao.query.filter_by(
+            processo_id=processo.id,
+            data=data_hora,
+            descricao=descricao,
+            origem="datajud",
+        ).first()
+        if existente:
+            continue
+
+        db.session.add(
+            Movimentacao(
+                processo=processo,
+                data=data_hora,
+                descricao=descricao,
+                origem="datajud",
+            )
+        )
+        novas += 1
+
+    if novas:
+        processo.alerta_pendente = True
+
+    return {"total_novas": novas, "erro": None}
+
+
 def verificar_movimentacoes():
     perf_start = time.perf_counter()
-    processos = Processo.query.filter(Processo.status != Processo.Status.ARQUIVADO).all()
+    processos = Processo.query.filter(
+        Processo.status != Processo.Status.ARQUIVADO
+    ).all()
     perf_busca_processos = time.perf_counter() - perf_start
 
     total_novas = 0
@@ -19,20 +70,10 @@ def verificar_movimentacoes():
     )
 
     for processo in processos:
-        if not processo.tribunal_alias:
-            erros += 1
-            print(
-                f"[PERF-MOV] processo_id={processo.id} | "
-                f"status=sem_tribunal_alias"
-            )
-            continue
-
         perf_processo_start = time.perf_counter()
-        try:
-            movimentos = consultar_movimentacoes(
-                processo.numero_cnj, processo.tribunal_alias
-            )
-        except DataJudError:
+        resultado = verificar_movimentacao_processo(processo)
+
+        if resultado["erro"]:
             erros += 1
             print(
                 f"[PERF-MOV] processo_id={processo.id} | "
@@ -40,48 +81,11 @@ def verificar_movimentacoes():
             )
             continue
 
-        perf_consulta = time.perf_counter() - perf_processo_start
-        perf_processamento_start = time.perf_counter()
-
-        novas = 0
-        for mov in movimentos:
-            data_hora_str = mov.get("dataHora")
-            if not data_hora_str:
-                continue
-            try:
-                data_hora = datetime.fromisoformat(data_hora_str.replace("Z", "+00:00"))
-            except ValueError:
-                continue
-            descricao = mov.get("nome") or "Movimentação sem descrição"
-            existente = Movimentacao.query.filter_by(
-                processo_id=processo.id,
-                data=data_hora,
-                descricao=descricao,
-                origem="datajud",
-            ).first()
-            if existente:
-                continue
-            db.session.add(
-                Movimentacao(
-                    processo=processo,
-                    data=data_hora,
-                    descricao=descricao,
-                    origem="datajud",
-                )
-            )
-            novas += 1
-
-        perf_processamento = time.perf_counter() - perf_processamento_start
-
-        if novas:
-            processo.alerta_pendente = True
-            total_novas += novas
-
+        novas = resultado["total_novas"]
+        total_novas += novas
         print(
             f"[PERF-MOV] processo_id={processo.id} | "
-            f"movimentacoes={len(movimentos)} | "
-            f"consulta={perf_consulta:.4f}s | "
-            f"processamento={perf_processamento:.4f}s | "
+            f"consulta/processamento={time.perf_counter() - perf_processo_start:.4f}s | "
             f"novas={novas}"
         )
 
@@ -94,4 +98,8 @@ def verificar_movimentacoes():
         f"total={time.perf_counter() - perf_start:.4f}s"
     )
 
-    return {"total_processos": len(processos), "total_novas": total_novas, "erros": erros}
+    return {
+        "total_processos": len(processos),
+        "total_novas": total_novas,
+        "erros": erros,
+    }
