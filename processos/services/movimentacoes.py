@@ -45,6 +45,7 @@ def verificar_movimentacao_processo(processo):
                 data=data_hora,
                 descricao=descricao,
                 origem="datajud",
+                lida=False,
             )
         )
         novas += 1
