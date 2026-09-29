@@ -1,1 +1,22 @@
-<html><body><a href="{{ url_for('clientes.list') }}">Voltar</a><h1>{{ cliente.nome }}</h1><p>{{ cliente.cpf_cnpj }}</p><p>{{ cliente.contato or '—' }}</p><p>{{ cliente.endereco or '—' }}</p><p>{{ cliente.observacoes or '—' }}</p><p><a href="{{ url_for('clientes.update',pk=cliente.id) }}">Editar</a></p><h2>Processos</h2>{% for processo in cliente.processos %}<p><a href="{{ url_for('processos.detail',pk=processo.id) }}">{{ processo.numero_cnj }}</a> — {{ processo.area_display() }} — {{ processo.status_display() }}</p>{% else %}<p>Nenhum processo.</p>{% endfor %}</body></html>
+<html>
+<body>
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, mensagem in mensagens %}
+        <p>{{ mensagem }}</p>
+    {% endfor %}
+{% endwith %}
+<a href="{{ url_for('clientes.list') }}">Voltar</a>
+<h1>{{ cliente.nome }}</h1>
+<p>{{ cliente.cpf_cnpj }}</p>
+<p>{{ cliente.contato or '—' }}</p>
+<p>{{ cliente.endereco or '—' }}</p>
+<p>{{ cliente.observacoes or '—' }}</p>
+<p><a href="{{ url_for('clientes.update', pk=cliente.id) }}">Editar</a></p>
+<h2>Processos</h2>
+{% for processo in cliente.processos %}
+    <p><a href="{{ url_for('processos.detail', pk=processo.id) }}">{{ processo.numero_cnj }}</a> — {{ processo.area_display() }} — {{ processo.status_display() }}</p>
+{% else %}
+    <p>Nenhum processo.</p>
+{% endfor %}
+</body>
+</html>
