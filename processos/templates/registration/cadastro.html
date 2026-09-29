@@ -136,9 +136,9 @@
         <section class="register-card" aria-label="Criar cadastro">
             <div class="register-brand" aria-hidden="true">GP</div>
             <p class="register-eyebrow">Gestão de Processos</p>
-            <h1>Criar sua conta</h1>
+            <h1>Cadastro restrito</h1>
             <p class="register-subtitle">
-                Cadastre um usuário para acessar o sistema de gestão jurídica.
+                A criação de usuários é feita exclusivamente por um administrador do sistema.
             </p>
 
             {% with messages = get_flashed_messages() %}
@@ -147,54 +147,11 @@
                 {% endfor %}
             {% endwith %}
 
-            <form method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="register-field">
-                    <label for="username">Nome de usuário</label>
-                    <input
-                        id="username"
-                        name="username"
-                        value="{{ username }}"
-                        autocomplete="username"
-                        minlength="3"
-                        maxlength="150"
-                        required
-                        autofocus
-                    >
-                    <p class="register-hint">Use pelo menos 3 caracteres.</p>
-                </div>
-
-                <div class="register-field">
-                    <label for="password">Senha</label>
-                    <input
-                        id="password"
-                        type="password"
-                        name="password"
-                        autocomplete="new-password"
-                        minlength="8"
-                        required
-                    >
-                    <p class="register-hint">Use pelo menos 8 caracteres.</p>
-                </div>
-
-                <div class="register-field">
-                    <label for="password_confirmation">Confirmar senha</label>
-                    <input
-                        id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        autocomplete="new-password"
-                        minlength="8"
-                        required
-                    >
-                </div>
-
-                <button class="register-submit" type="submit">Criar cadastro</button>
-            </form>
+            <div class="register-alert" role="alert">
+                Solicite ao administrador a criação da sua conta.
+            </div>
 
             <p class="register-footer">
-                Já possui uma conta?
                 <a href="{{ url_for('auth.login') }}">Voltar para o login</a>
             </p>
         </section>
