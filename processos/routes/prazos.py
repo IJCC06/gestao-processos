@@ -5,6 +5,7 @@ from flask_login import login_required
 
 from processos.extensions import db
 from processos.models import Prazo, Processo
+from processos.services.auditoria import registrar_auditoria
 
 prazos_bp = Blueprint("prazos", __name__, url_prefix="/prazos")
 
@@ -76,6 +77,8 @@ def form(prazo=None):
 
             db.session.add(prazo)
             db.session.commit()
+            registrar_auditoria("ALTERAR" if prazo.id else "CRIAR", "Prazo", prazo.id, f"Prazo salvo: {prazo.titulo}.")
+            db.session.commit()
             flash("Prazo salvo com sucesso.", "success")
             return redirect(url_for("prazos.detail", pk=prazo.id))
 
@@ -129,7 +132,11 @@ def delete(pk):
         abort(404)
 
     if request.method == "POST":
+        prazo_id = prazo.id
+        prazo_titulo = prazo.titulo
         db.session.delete(prazo)
+        db.session.commit()
+        registrar_auditoria("EXCLUIR", "Prazo", prazo_id, f"Prazo excluído: {prazo_titulo}.")
         db.session.commit()
         flash("Prazo excluído com sucesso.", "success")
         return redirect(url_for("prazos.list"))
@@ -144,6 +151,8 @@ def concluir(pk):
     if prazo is None:
         abort(404)
     prazo.status = Prazo.Status.CONCLUIDO
+    db.session.commit()
+    registrar_auditoria("CONCLUIR", "Prazo", prazo.id, f"Prazo concluído: {prazo.titulo}.")
     db.session.commit()
     flash("Prazo marcado como concluído.", "success")
     return redirect(url_for("prazos.list"))
