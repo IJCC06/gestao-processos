@@ -6,6 +6,7 @@ Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e m
 
 - Backend: Python + Flask
 - ORM e banco: Flask-SQLAlchemy + SQLite por padrão
+- Migrações: Flask-Migrate + Alembic
 - Autenticação: Flask-Login
 - Formulários e CSRF: Flask-WTF
 - Frontend: Jinja2 Templates + HTML/CSS
@@ -73,7 +74,25 @@ A aplicação também pode ser executada com:
 
     python app.py
 
-As tabelas são criadas automaticamente na inicialização da aplicação.
+As tabelas não são mais criadas automaticamente. O banco é controlado por migrações do Flask-Migrate/Alembic.
+
+## Migrações do banco
+
+Depois de instalar as dependências, use:
+
+    flask --app app db upgrade
+
+Para um banco SQLite existente que já contém o schema atual, marque a migração inicial como aplicada sem recriar as tabelas:
+
+    flask --app app db stamp 0001_baseline
+
+A partir daí, alterações futuras nos modelos devem ser feitas por novas migrações. Para gerar uma migração após alterar os modelos:
+
+    flask --app app db migrate -m "descrever alteracao"
+
+Revise a migração gerada antes de aplicá-la e depois execute:
+
+    flask --app app db upgrade
 
 ## Testes
 
