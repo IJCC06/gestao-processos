@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from processos.extensions import db
-from processos.models import Cliente, Processo
+from processos.models import Cliente, Prazo, Processo
 from processos.services.movimentacoes import verificar_movimentacao_processo
 
 processos_bp = Blueprint("processos", __name__, url_prefix="/processos")
