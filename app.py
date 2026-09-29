@@ -16,6 +16,7 @@ from processos.routes import (
     prazos_bp,
     notificacoes_bp,
     dashboard_bp,
+    admin_bp,
 )
 
 load_dotenv()
@@ -69,9 +70,26 @@ def register_blueprints(app):
     app.register_blueprint(processos_bp)
     app.register_blueprint(prazos_bp)
     app.register_blueprint(notificacoes_bp)
+    app.register_blueprint(admin_bp)
 
 
 def register_cli(app):
+    @app.cli.command("tornar-admin")
+    def tornar_admin_cli():
+        """Concede permissão de administrador a um usuário existente."""
+        import click
+
+        username = click.prompt("Nome de usuário")
+        with app.app_context():
+            usuario = Usuario.query.filter_by(username=username.strip()).first()
+            if usuario is None:
+                click.echo("Usuário não encontrado.")
+                return
+            usuario.is_admin = True
+            usuario.is_active = True
+            db.session.commit()
+            click.echo(f"Usuário '{usuario.username}' agora é administrador.")
+
     @app.cli.command("verificar-movimentacoes")
     def verificar_movimentacoes_cli():
         resultado = verificar_movimentacoes()
