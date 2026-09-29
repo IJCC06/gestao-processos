@@ -1,12 +1,48 @@
+from decimal import Decimal, InvalidOperation
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 
 from processos.extensions import db
 from processos.models import Cliente, Processo
 from processos.services.movimentacoes import verificar_movimentacao_processo
 
 processos_bp = Blueprint("processos", __name__, url_prefix="/processos")
+
+
+def normalizar_numero_cnj(valor):
+    digitos = "".join(ch for ch in valor if ch.isdigit())
+    if len(digitos) != 20:
+        return None
+
+    base = digitos[:7] + digitos[9:] + "0100"
+    digito_verificador = 98 - (int(base) % 97)
+    esperado = f"{digito_verificador:02d}"
+
+    if digitos[7:9] != esperado:
+        return None
+
+    return (
+        f"{digitos[:7]}-{digitos[7:9]}.{digitos[9:13]}."
+        f"{digitos[13]}.{digitos[14:16]}.{digitos[16:]}"
+    )
+
+
+def decimal_positivo_ou_vazio(valor):
+    if not valor:
+        return None
+
+    try:
+        numero = Decimal(valor.replace(",", "."))
+    except (InvalidOperation, AttributeError):
+        raise ValueError
+
+    if numero < 0:
+        raise ValueError
+
+    return numero.quantize(Decimal("0.01"))
 
 
 @processos_bp.get("/")
@@ -61,53 +97,110 @@ def update(pk):
 
 def form(processo=None):
     clientes = Cliente.query.order_by(Cliente.nome).all()
+    valores = None
 
     if request.method == "POST":
-        cliente = db.session.get(
-            Cliente, request.form.get("cliente", type=int)
-        )
-        numero = request.form.get("numero_cnj", "").strip()
+        valores = {
+            "cliente": request.form.get("cliente", ""),
+            "numero_cnj": request.form.get("numero_cnj", "").strip(),
+            "area": request.form.get("area", "").strip(),
+            "tribunal": request.form.get("tribunal", "").strip(),
+            "tribunal_alias": request.form.get("tribunal_alias", "").strip(),
+            "fase": request.form.get("fase", "").strip(),
+            "status": request.form.get("status", "").strip(),
+            "valor_causa": request.form.get("valor_causa", "").strip(),
+            "honorarios": request.form.get("honorarios", "").strip(),
+        }
 
-        if not cliente or not numero:
+        cliente = db.session.get(Cliente, request.form.get("cliente", type=int))
+        numero_cnj = normalizar_numero_cnj(valores["numero_cnj"])
+
+        try:
+            valor_causa = decimal_positivo_ou_vazio(valores["valor_causa"])
+            honorarios = decimal_positivo_ou_vazio(valores["honorarios"])
+            valores_financeiros_validos = True
+        except ValueError:
+            valor_causa = honorarios = None
+            valores_financeiros_validos = False
+
+        numero_duplicado = (
+            numero_cnj
+            and Processo.query.filter(
+                Processo.numero_cnj == numero_cnj,
+                Processo.id != (processo.id if processo else 0),
+            ).first()
+        )
+
+        if not cliente or not valores["numero_cnj"]:
             flash("Informe o cliente e o número do processo.", "error")
-        elif Processo.query.filter(
-            Processo.numero_cnj == numero,
-            Processo.id != (processo.id if processo else 0),
-        ).first():
-            flash(
-                "Já existe um processo com este número CNJ.",
-                "error",
-            )
+        elif not numero_cnj:
+            flash("Informe um número CNJ válido.", "error")
+        elif numero_duplicado:
+            flash("Já existe um processo com este número CNJ.", "error")
+        elif valores["area"] not in Processo.Area.values():
+            flash("Selecione uma área válida.", "error")
+        elif valores["status"] not in Processo.Status.values():
+            flash("Selecione um status válido.", "error")
+        elif not valores_financeiros_validos:
+            flash("Informe valores financeiros válidos e não negativos.", "error")
+        elif len(valores["tribunal"]) > 150:
+            flash("O tribunal deve ter no máximo 150 caracteres.", "error")
+        elif len(valores["tribunal_alias"]) > 20:
+            flash("O alias DataJud deve ter no máximo 20 caracteres.", "error")
+        elif len(valores["fase"]) > 100:
+            flash("A fase deve ter no máximo 100 caracteres.", "error")
+        elif valores_financeiros_validos and (
+            valor_causa is not None and valor_causa > Decimal("9999999999.99")
+            or honorarios is not None and honorarios > Decimal("9999999999.99")
+        ):
+            flash("Os valores financeiros excedem o limite permitido.", "error")
         else:
             if processo is None:
                 processo = Processo()
 
             processo.cliente = cliente
-            processo.numero_cnj = numero
-            processo.area = request.form.get("area", "")
-            processo.tribunal = request.form.get("tribunal", "").strip()
-            processo.tribunal_alias = request.form.get(
-                "tribunal_alias", ""
-            ).strip()
-            processo.fase = request.form.get("fase", "").strip()
-            processo.status = request.form.get(
-                "status", Processo.Status.ATIVO
-            )
-            processo.valor_causa = request.form.get("valor_causa") or None
-            processo.honorarios = request.form.get("honorarios") or None
+            processo.numero_cnj = numero_cnj
+            processo.area = valores["area"]
+            processo.tribunal = valores["tribunal"]
+            processo.tribunal_alias = valores["tribunal_alias"]
+            processo.fase = valores["fase"]
+            processo.status = valores["status"]
+            processo.valor_causa = valor_causa
+            processo.honorarios = honorarios
 
             db.session.add(processo)
-            db.session.commit()
-            flash("Processo salvo com sucesso.", "success")
-            return redirect(
-                url_for("processos.detail", pk=processo.id)
-            )
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash("Já existe um processo com este número CNJ.", "error")
+            else:
+                flash("Processo salvo com sucesso.", "success")
+                return redirect(url_for("processos.detail", pk=processo.id))
 
     return render_template(
         "processos/processos/form.html",
         titulo="Editar processo" if processo else "Novo processo",
         processo=processo,
         clientes=clientes,
+        valores=valores,
+    )
+
+
+@processos_bp.route("/<int:pk>/excluir/", methods=["GET", "POST"])
+@login_required
+def delete(pk):
+    processo = db.get_or_404(Processo, pk)
+
+    if request.method == "POST":
+        db.session.delete(processo)
+        db.session.commit()
+        flash("Processo excluído com sucesso.", "success")
+        return redirect(url_for("processos.list"))
+
+    return render_template(
+        "processos/processos/delete.html",
+        processo=processo,
     )
 
 
@@ -144,6 +237,6 @@ def detail(pk):
         prazos_pendentes=[
             prazo
             for prazo in processo.prazos
-            if prazo.status == "pendente"
+            if prazo.status == Prazo.Status.PENDENTE
         ],
     )
