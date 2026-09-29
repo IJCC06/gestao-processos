@@ -6,6 +6,7 @@ from flask_login import login_required
 from config.settings import Config
 from processos.extensions import db
 from processos.models import Movimentacao, Prazo, Processo
+from processos.services.movimentacoes import verificar_movimentacoes
 
 notificacoes_bp = Blueprint("notificacoes", __name__, url_prefix="/notificacoes")
 
@@ -38,6 +39,28 @@ def list():
         prazos_proximos=proximos,
         movimentos=movimentos,
     )
+
+
+@notificacoes_bp.post("/atualizar/")
+@login_required
+def atualizar_movimentacoes():
+    resultado = verificar_movimentacoes()
+
+    if resultado["erros"]:
+        flash(
+            f"Consulta concluída com {resultado['erros']} "
+            "ocorrência(s) de erro ou configuração ausente.",
+            "warning",
+        )
+    else:
+        flash(
+            f"Consulta concluída: {resultado['total_novas']} "
+            f"movimentação(ões) nova(s) encontrada(s) em "
+            f"{resultado['total_processos']} processo(s).",
+            "success",
+        )
+
+    return redirect(url_for("notificacoes.list"))
 
 
 @notificacoes_bp.post("/processos/<int:pk>/limpar/")
