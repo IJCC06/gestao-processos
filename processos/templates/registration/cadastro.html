@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Criar cadastro | Gestão de Processos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='processos/css/app.css') }}">
+    <style>
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top right, rgba(36, 87, 166, .12), transparent 34%),
+                linear-gradient(135deg, #f4f6f8 0%, #eef2f7 100%);
+        }
+
+        .register-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+        }
+
+        .register-card {
+            width: min(520px, 100%);
+            padding: 42px;
+            background: #fff;
+            border: 1px solid #e1e6ec;
+            border-radius: 18px;
+            box-shadow: 0 18px 50px rgba(16, 24, 40, .09);
+        }
+
+        .register-brand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 46px;
+            margin-bottom: 22px;
+            border-radius: 12px;
+            background: #e8edf4;
+            color: #2457a6;
+            font-weight: 800;
+        }
+
+        .register-eyebrow {
+            margin: 0 0 7px;
+            color: #667085;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+        }
+
+        .register-card h1 {
+            margin: 0;
+            color: #172033;
+            font-size: 2rem;
+            letter-spacing: -.03em;
+        }
+
+        .register-subtitle {
+            margin: 9px 0 28px;
+            color: #667085;
+            line-height: 1.55;
+        }
+
+        .register-alert {
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            border: 1px solid #f3c7c3;
+            border-radius: 9px;
+            background: #fef3f2;
+            color: #b42318;
+            font-size: .9rem;
+        }
+
+        .register-field {
+            margin-bottom: 18px;
+        }
+
+        .register-field label {
+            display: block;
+            margin-bottom: 7px;
+            color: #374151;
+            font-size: .9rem;
+            font-weight: 700;
+        }
+
+        .register-field input {
+            min-height: 46px;
+        }
+
+        .register-field input:focus {
+            outline: none;
+            border-color: #2457a6;
+            box-shadow: 0 0 0 3px rgba(36,87,166,.12);
+        }
+
+        .register-hint {
+            margin: 7px 0 0;
+            color: #98a2b3;
+            font-size: .78rem;
+        }
+
+        .register-submit {
+            width: 100%;
+            min-height: 48px;
+            margin-top: 4px;
+        }
+
+        .register-footer {
+            margin: 22px 0 0;
+            color: #667085;
+            font-size: .85rem;
+            text-align: center;
+        }
+
+        .register-footer a {
+            font-weight: 700;
+        }
+
+        @media (max-width: 520px) {
+            .register-page {
+                padding: 16px;
+            }
+
+            .register-card {
+                padding: 30px 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="register-page">
+        <section class="register-card" aria-label="Criar cadastro">
+            <div class="register-brand" aria-hidden="true">GP</div>
+            <p class="register-eyebrow">Gestão de Processos</p>
+            <h1>Criar sua conta</h1>
+            <p class="register-subtitle">
+                Cadastre um usuário para acessar o sistema de gestão jurídica.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% for message in messages %}
+                    <div class="register-alert" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="register-field">
+                    <label for="username">Nome de usuário</label>
+                    <input
+                        id="username"
+                        name="username"
+                        value="{{ username }}"
+                        autocomplete="username"
+                        minlength="3"
+                        maxlength="150"
+                        required
+                        autofocus
+                    >
+                    <p class="register-hint">Use pelo menos 3 caracteres.</p>
+                </div>
+
+                <div class="register-field">
+                    <label for="password">Senha</label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+                    <p class="register-hint">Use pelo menos 8 caracteres.</p>
+                </div>
+
+                <div class="register-field">
+                    <label for="password_confirmation">Confirmar senha</label>
+                    <input
+                        id="password_confirmation"
+                        type="password"
+                        name="password_confirmation"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+                </div>
+
+                <button class="register-submit" type="submit">Criar cadastro</button>
+            </form>
+
+            <p class="register-footer">
+                Já possui uma conta?
+                <a href="{{ url_for('auth.login') }}">Voltar para o login</a>
+            </p>
+        </section>
+    </main>
+</body>
+</html>
