@@ -76,9 +76,8 @@ def register_blueprints(app):
 def register_cli(app):
     @app.cli.command("migrar-usuarios")
     def migrar_usuarios_cli():
-        import click
-
         """Adiciona as colunas de administração à tabela de usuários existente."""
+        import click
         from sqlalchemy import inspect, text
 
         if not db.engine.url.drivername.startswith("sqlite"):
