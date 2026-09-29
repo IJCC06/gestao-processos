@@ -45,9 +45,71 @@ Também é possível executar a rotina pela CLI do Flask:
 
     flask verificar-movimentacoes
 
-## Configuração
+## Instalação no Windows
 
-Crie um ambiente virtual:
+A instalação foi preparada para que um usuário sem conhecimento de programação possa configurar o sistema com um único instalador.
+
+### Requisitos
+
+- Windows 10 ou Windows 11
+- Python 3 instalado no computador
+- Acesso à internet durante a instalação, para baixar as dependências
+- Chave da API pública do DataJud, caso o monitoramento de processos seja utilizado
+
+### Instalação
+
+1. Baixe o código da versão mais recente pela área **Releases** do GitHub.
+2. Extraia o arquivo ZIP em uma pasta do computador.
+3. Entre na pasta extraída.
+4. Dê dois cliques em:
+
+       scripts\instalar_sistema.bat
+
+5. O instalador irá:
+   - criar o ambiente virtual Python;
+   - instalar as dependências;
+   - criar automaticamente uma chave secreta para a instalação;
+   - solicitar a chave do DataJud;
+   - preparar o banco SQLite com as migrações;
+   - solicitar os dados do primeiro administrador;
+   - criar o atalho **Gestão de Processos** na Área de Trabalho.
+
+A senha do administrador deve ter pelo menos 8 caracteres.
+
+A chave do DataJud pode ser deixada em branco durante a instalação e configurada posteriormente no arquivo `.env`.
+
+### Uso diário
+
+Depois da instalação, não é necessário abrir o CMD.
+
+Basta dar dois cliques no atalho **Gestão de Processos** criado na Área de Trabalho. O sistema inicia o servidor local e abre o navegador automaticamente.
+
+### Configuração do DataJud
+
+A chave da API fica somente no arquivo local `.env` e não deve ser enviada ao GitHub.
+
+Se for necessário configurá-la depois da instalação, abra o arquivo:
+
+       .env
+
+e preencha:
+
+       DATAJUD_API_KEY=sua-chave-do-datajud
+
+### Atualização de uma instalação existente
+
+Para atualizar uma instalação já existente:
+
+1. Faça uma cópia/backup do banco `flask.db`.
+2. Baixe a nova versão.
+3. Substitua os arquivos do sistema, preservando o arquivo `.env` e o banco local.
+4. Execute novamente `scripts\\instalar_sistema.bat`.
+
+O instalador é preparado para reaproveitar o ambiente virtual, a configuração existente e o banco. As novas migrações serão aplicadas automaticamente.
+
+### Instalação manual
+
+Para desenvolvimento ou manutenção, também é possível configurar o projeto manualmente:
 
     python -m venv .venv
 
@@ -59,12 +121,16 @@ Instale as dependências:
 
     pip install -r requirements.txt
 
-Copie .env.example para .env e configure as variáveis necessárias, incluindo:
+Copie `.env.example` para `.env` e configure:
 
     FLASK_SECRET_KEY=sua-chave-secreta
     DATAJUD_API_KEY=sua-chave-do-datajud
 
-O banco padrão é SQLite e será criado como flask.db.
+Depois aplique as migrações:
+
+    flask --app app db upgrade
+
+O banco padrão é SQLite.
 
 ## Execução
 
@@ -73,128 +139,6 @@ O banco padrão é SQLite e será criado como flask.db.
 A aplicação também pode ser executada com:
 
     python app.py
-
-As tabelas não são mais criadas automaticamente. O banco é controlado por migrações do Flask-Migrate/Alembic.
-
-## Migrações do banco
-
-Depois de instalar as dependências, use:
-
-    flask --app app db upgrade
-
-Para um banco SQLite existente que já contém o schema atual, marque a migração inicial como aplicada sem recriar as tabelas:
-
-    flask --app app db stamp 0001_baseline
-
-A partir daí, alterações futuras nos modelos devem ser feitas por novas migrações. Para gerar uma migração após alterar os modelos:
-
-    flask --app app db migrate -m "descrever alteracao"
-
-Revise a migração gerada antes de aplicá-la e depois execute:
-
-    flask --app app db upgrade
-
-## Testes
-
-    python -m unittest discover processos -p "test*.py" -v
-
-Os testes utilizam SQLite em memória para não alterar o banco local de desenvolvimento.
-
-## Estrutura
-
-    .
-    ├── app.py
-    ├── config/
-    │   └── settings.py
-    ├── processos/
-    │   ├── models.py
-    │   ├── extensions.py
-    │   ├── routes/
-    │   ├── services/
-    │   ├── static/
-    │   └── tests.py
-    ├── .env.example
-    ├── .gitignore
-    └── requirements.txt
-
-## Abertura simplificada no Windows
-
-Para o uso diario, nao e necessario abrir o CMD ou executar comandos do Flask.
-
-### Primeira configuracao
-
-Depois que o projeto estiver instalado e o ambiente virtual estiver criado, execute uma unica vez:
-
-    scripts\criar_atalho_desktop.vbs
-
-Isso cria na Area de Trabalho o atalho **Gestao de Processos**.
-
-### Uso diario
-### Encerramento do sistema
-
-Na tela principal, o botão **Encerrar sistema** encerra a sessão e finaliza o servidor Flask local. Uma confirmação é exibida antes do encerramento.
-
-Isso evita deixar o servidor rodando desnecessariamente depois que o uso do sistema terminou.
-
-
-Basta dar dois cliques no atalho **Gestao de Processos**. O inicializador:
-
-1. verifica o ambiente virtual;
-2. inicia o servidor Flask sem abrir uma janela do CMD;
-3. espera o sistema ficar disponivel;
-4. abre automaticamente o navegador em http://127.0.0.1:5000/.
-
-Se o sistema ja estiver aberto, o inicializador apenas abre o navegador.
-
-Os detalhes de inicializacao ficam registrados em `logs\launcher.log`, sem exibir informacoes tecnicas para o usuario.
-
-> **Importante:** esta configuracao foi feita para o uso local no computador onde o sistema esta instalado. O banco SQLite e os arquivos do sistema permanecem nesse computador.
-
-## Backup do banco SQLite
-
-O sistema possui backup manual e pode ser configurado para executar backups automaticamente no Windows. O backup usa a API nativa do SQLite, gerando uma cópia consistente mesmo enquanto a aplicação está em execução.
-
-### Backup manual
-
-Na pasta do projeto:
-
-    scripts\backup_db.bat
-
-Ou diretamente pela CLI:
-
-    flask --app app backup-db
-
-Por padrão, os backups são salvos em:
-
-    backups\
-
-e os arquivos seguem o formato:
-
-    flask_AAAAMMDD_HHMMSS.db
-
-O sistema mantém os últimos 30 dias de backups por padrão. Para alterar a retenção:
-
-    flask --app app backup-db --retention-days 60
-
-Também é possível definir outra pasta por meio de `BACKUP_DIR`.
-
-### Backup automático no Windows
-
-Execute uma vez:
-
-    scripts\configurar_backup_automatico.bat
-
-Isso cria uma tarefa do Agendador de Tarefas do Windows chamada `GestaoProcessos - Backup diario`, configurada para executar o backup todos os dias às 02:00.
-
-Para remover a tarefa:
-
-    schtasks /Delete /TN "GestaoProcessos - Backup diario" /F
-
-O backup automático depende do computador estar ligado no horário programado. Se ele estiver desligado, a tarefa não executará retroativamente. Para maior segurança operacional, mantenha também cópias dos backups em outro local físico.
-
-### Verificação do backup
-
-Cada backup é validado com `PRAGMA integrity_check` antes de ser considerado concluído. Mesmo assim, um backup só deve ser considerado confiável depois de um teste real de restauração.
 
 ## Segurança
 
