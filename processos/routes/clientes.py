@@ -42,7 +42,7 @@ def documento_valido(valor):
 @login_required
 def list():
     busca = request.args.get("q", "").strip()
-    consulta = Cliente.query.order_by(Cliente.nome)
+    consulta = db.select(Cliente).order_by(Cliente.nome)
 
     if busca:
         termo = f"%{busca}%"
@@ -53,11 +53,11 @@ def list():
         ]
         if cpf_termo:
             filtros.append(Cliente.cpf_cnpj.ilike(f"%{cpf_termo}%"))
-        consulta = consulta.filter(or_(*filtros))
+        consulta = consulta.where(or_(*filtros))
 
     pagina = request.args.get("page", 1, type=int)
     pagina = max(pagina, 1)
-    clientes = db.paginate(db.select(Cliente).filter(consulta.whereclause).order_by(Cliente.nome) if consulta.whereclause is not None else db.select(Cliente).order_by(Cliente.nome), page=pagina, per_page=20, error_out=False)
+    clientes = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/clientes/list.html",
