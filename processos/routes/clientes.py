@@ -1,5 +1,6 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from processos.extensions import db
@@ -41,17 +42,22 @@ def documento_valido(valor):
 @login_required
 def list():
     busca = request.args.get("q", "").strip()
-    clientes = Cliente.query.order_by(Cliente.nome).all()
+    consulta = Cliente.query.order_by(Cliente.nome)
 
     if busca:
-        termo = busca.lower()
-        clientes = [
-            cliente
-            for cliente in clientes
-            if termo in cliente.nome.lower()
-            or termo in cliente.cpf_cnpj.lower()
-            or termo in (cliente.contato or "").lower()
+        termo = f"%{busca}%"
+        cpf_termo = normalizar_cpf_cnpj(busca)
+        filtros = [
+            Cliente.nome.ilike(termo),
+            Cliente.contato.ilike(termo),
         ]
+        if cpf_termo:
+            filtros.append(Cliente.cpf_cnpj.ilike(f"%{cpf_termo}%"))
+        consulta = consulta.filter(or_(*filtros))
+
+    pagina = request.args.get("page", 1, type=int)
+    pagina = max(pagina, 1)
+    clientes = db.paginate(consulta, page=pagina, per_page=20, error_out=False)
 
     return render_template(
         "processos/clientes/list.html",
