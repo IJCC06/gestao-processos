@@ -21,7 +21,7 @@ Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e m
 - Busca de processos por número CNJ, cliente ou tribunal
 - Filtros de processos por área e status
 - Cadastro de prazos
-- Área de notificações
+- Área de notificações com resumo de prazos e movimentações pendentes
 - Consulta manual de movimentações pelo DataJud, inclusive por processo
 - Prevenção de duplicação de movimentações
 - Proteção CSRF nos formulários
