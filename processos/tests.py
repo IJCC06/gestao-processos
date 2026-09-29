@@ -47,7 +47,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
                 username="teste",
                 password_hash=self.TEST_PASSWORD_HASH,
             )
-            cliente = Cliente(nome="Cliente Teste", cpf_cnpj="12345678901")
+            cliente = Cliente(nome="Cliente Teste", cpf_cnpj="52998224725")
             db.session.add_all([usuario, cliente])
             db.session.commit()
 
@@ -199,7 +199,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.login()
         resposta = self.client.post(
             "/clientes/novo/",
-            data={"nome": "Outro Cliente", "cpf_cnpj": "12345678901"},
+            data={"nome": "Outro Cliente", "cpf_cnpj": "52998224725"},
         )
 
         self.assertEqual(resposta.status_code, 200)
@@ -232,7 +232,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
     def test_edicao_de_cliente_rejeita_cpf_cnpj_de_outro_cliente(self):
         with self.app.app_context():
-            outro = Cliente(nome="Outro Cliente", cpf_cnpj="98765432100")
+            outro = Cliente(nome="Outro Cliente", cpf_cnpj="11144477735")
             db.session.add(outro)
             db.session.commit()
 
@@ -241,7 +241,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             f"/clientes/{self.cliente_id}/editar/",
             data={
                 "nome": "Cliente Atualizado",
-                "cpf_cnpj": "52998224725",
+                "cpf_cnpj": "11144477735",
             },
         )
 
@@ -251,7 +251,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         with self.app.app_context():
             cliente = db.session.get(Cliente, self.cliente_id)
             self.assertEqual(cliente.nome, "Cliente Teste")
-            self.assertEqual(cliente.cpf_cnpj, "12345678901")
+            self.assertEqual(cliente.cpf_cnpj, "52998224725")
 
     def test_exclusao_de_cliente_sem_processos(self):
         with self.app.app_context():
