@@ -1,5 +1,6 @@
 """Integração com a API Pública do DataJud (CNJ)."""
 
+import logging
 import os
 
 import requests
@@ -7,6 +8,8 @@ import requests
 BASE_URL = "https://api-publica.datajud.cnj.jus.br"
 CONNECT_TIMEOUT = 5
 READ_TIMEOUT = 20
+
+logger = logging.getLogger(__name__)
 
 
 class DataJudError(Exception):
@@ -16,6 +19,7 @@ class DataJudError(Exception):
 def _api_key() -> str:
     api_key = os.environ.get("DATAJUD_API_KEY", "").strip()
     if not api_key:
+        logger.error("DataJud sem API key configurada.")
         raise DataJudError(
             "DATAJUD_API_KEY não configurada. Defina a chave no arquivo .env."
         )
@@ -64,22 +68,27 @@ def consultar_movimentacoes(numero_cnj: str, tribunal_alias: str) -> list[dict]:
             timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
         )
     except requests.Timeout as exc:
+        logger.warning("Timeout ao consultar DataJud: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
         raise DataJudError(
             "O DataJud demorou demais para responder. Tente novamente."
         ) from exc
     except requests.ConnectionError as exc:
+        logger.warning("Falha de conexão com DataJud: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
         raise DataJudError(
             "Não foi possível conectar ao DataJud. Verifique a conexão e tente novamente."
         ) from exc
     except requests.RequestException as exc:
-        raise DataJudError(f"Falha de comunicação com o DataJud: {exc}") from exc
+        logger.exception("Falha inesperada de comunicação com DataJud: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
+        raise DataJudError("Falha de comunicação com o DataJud. Tente novamente.") from exc
 
     if resposta.status_code >= 400:
+        logger.warning("DataJud retornou HTTP %s: alias=%s cnj_final=%s", resposta.status_code, tribunal_alias, numero_limpo[-4:])
         raise DataJudError(_mensagem_status_http(resposta.status_code))
 
     try:
         dados = resposta.json()
     except ValueError as exc:
+        logger.error("DataJud retornou JSON inválido: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
         raise DataJudError("O DataJud retornou uma resposta JSON inválida.") from exc
 
     if not isinstance(dados, dict):
