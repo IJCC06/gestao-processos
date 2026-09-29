@@ -130,6 +130,12 @@ Depois que o projeto estiver instalado e o ambiente virtual estiver criado, exec
 Isso cria na Area de Trabalho o atalho **Gestao de Processos**.
 
 ### Uso diario
+### Encerramento do sistema
+
+Na tela principal, o botão **Encerrar sistema** encerra a sessão e finaliza o servidor Flask local. Uma confirmação é exibida antes do encerramento.
+
+Isso evita deixar o servidor rodando desnecessariamente depois que o uso do sistema terminou.
+
 
 Basta dar dois cliques no atalho **Gestao de Processos**. O inicializador:
 
