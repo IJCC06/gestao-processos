@@ -84,6 +84,9 @@ class Processo(db.Model):
     valor_causa = db.Column(db.Numeric(12, 2), nullable=True)
     honorarios = db.Column(db.Numeric(12, 2), nullable=True)
     alerta_pendente = db.Column(db.Boolean, default=False, nullable=False)
+    datajud_ultima_consulta_em = db.Column(db.DateTime(timezone=True), nullable=True)
+    datajud_ultimo_status = db.Column(db.String(20), nullable=True)
+    datajud_ultimo_erro = db.Column(db.Text, nullable=True)
     criado_em = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     cliente = db.relationship("Cliente", back_populates="processos")
