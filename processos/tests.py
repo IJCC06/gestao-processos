@@ -11,9 +11,6 @@ from processos.services.movimentacoes import verificar_movimentacao_processo, ve
 
 
 class FluxosPrincipaisTests(unittest.TestCase):
-    # O banco em memória evita I/O em disco e a criação de arquivos temporários.
-    # O hash abaixo é exclusivo dos testes e usa poucas iterações para acelerar
-    # login/check_password sem alterar o hash usado pela aplicação em produção.
     TEST_PASSWORD_HASH = (
         "pbkdf2:sha256:1000$testsalt12345678$"
         "2ff4dfb6373dbfd4406002dd1983527ca84061feab36784fbec16a794e96372a"
@@ -148,9 +145,113 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 302)
 
         with self.app.app_context():
-            self.assertIsNotNone(
-                Cliente.query.filter_by(cpf_cnpj="98765432100").first()
-            )
+            cliente = Cliente.query.filter_by(cpf_cnpj="98765432100").first()
+            self.assertIsNotNone(cliente)
+            self.assertEqual(cliente.nome, "Novo Cliente")
+
+    def test_criacao_de_cliente_exige_nome_e_cpf_cnpj(self):
+        self.login()
+        resposta = self.client.post(
+            "/clientes/novo/",
+            data={"nome": "", "cpf_cnpj": ""},
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Informe o nome e o CPF/CNPJ.", resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Cliente.query.count(), 1)
+
+    def test_criacao_de_cliente_rejeita_cpf_cnpj_duplicado(self):
+        self.login()
+        resposta = self.client.post(
+            "/clientes/novo/",
+            data={
+                "nome": "Outro Cliente",
+                "cpf_cnpj": "12345678901",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"JÃ¡ existe um cliente com este CPF/CNPJ.", resposta.data)
+
+        with self.app.app_context():
+            self.assertEqual(Cliente.query.count(), 1)
+
+    def test_edicao_de_cliente(self):
+        self.login()
+        resposta = self.client.post(
+            f"/clientes/{self.cliente_id}/editar/",
+            data={
+                "nome": "Cliente Atualizado",
+                "cpf_cnpj": "12345678901",
+                "contato": "novo-contato",
+                "endereco": "Novo endereco",
+                "observacoes": "Nova observacao",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 302)
+
+        with self.app.app_context():
+            cliente = db.session.get(Cliente, self.cliente_id)
+            self.assertEqual(cliente.nome, "Cliente Atualizado")
+            self.assertEqual(cliente.contato, "novo-contato")
+            self.assertEqual(cliente.endereco, "Novo endereco")
+            self.assertEqual(cliente.observacoes, "Nova observacao")
+
+    def test_edicao_de_cliente_rejeita_cpf_cnpj_de_outro_cliente(self):
+        with self.app.app_context():
+            outro = Cliente(nome="Outro Cliente", cpf_cnpj="98765432100")
+            db.session.add(outro)
+            db.session.commit()
+
+        self.login()
+        resposta = self.client.post(
+            f"/clientes/{self.cliente_id}/editar/",
+            data={
+                "nome": "Cliente Atualizado",
+                "cpf_cnpj": "98765432100",
+            },
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"JÃ¡ existe um cliente com este CPF/CNPJ.", resposta.data)
+
+        with self.app.app_context():
+            cliente = db.session.get(Cliente, self.cliente_id)
+            self.assertEqual(cliente.nome, "Cliente Teste")
+            self.assertEqual(cliente.cpf_cnpj, "12345678901")
+
+    def test_exclusao_de_cliente_sem_processos(self):
+        with self.app.app_context():
+            cliente = Cliente(nome="Cliente Excluir", cpf_cnpj="98765432100")
+            db.session.add(cliente)
+            db.session.commit()
+            cliente_id = cliente.id
+
+        self.login()
+        resposta = self.client.post(f"/clientes/{cliente_id}/excluir/")
+
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn("/clientes/", resposta.location)
+
+        with self.app.app_context():
+            self.assertIsNone(db.session.get(Cliente, cliente_id))
+
+    def test_exclusao_de_cliente_com_processo_e_bloqueada(self):
+        self.login()
+        resposta = self.client.post(
+            f"/clientes/{self.cliente_id}/excluir/",
+            follow_redirects=True,
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Existem processos vinculados.", resposta.data)
+
+        with self.app.app_context():
+            self.assertIsNotNone(db.session.get(Cliente, self.cliente_id))
+            self.assertIsNotNone(db.session.get(Processo, self.processo_id))
 
     def test_criacao_de_processo(self):
         self.login()
