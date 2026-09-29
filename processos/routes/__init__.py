@@ -6,6 +6,7 @@ from .notificacoes import notificacoes_bp
 from .dashboard import dashboard_bp
 from .admin import admin_bp
 from .auditoria import auditoria_bp
+from .sistema import sistema_bp
 
 __all__ = [
     "auth_bp",
@@ -16,4 +17,5 @@ __all__ = [
     "dashboard_bp",
     "admin_bp",
     "auditoria_bp",
+    "sistema_bp",
 ]
