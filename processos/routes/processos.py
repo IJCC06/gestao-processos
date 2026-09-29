@@ -4,6 +4,7 @@ from sqlalchemy import or_
 
 from processos.extensions import db
 from processos.models import Cliente, Processo
+from processos.services.movimentacoes import verificar_movimentacao_processo
 
 processos_bp = Blueprint("processos", __name__, url_prefix="/processos")
 
@@ -108,6 +109,29 @@ def form(processo=None):
         processo=processo,
         clientes=clientes,
     )
+
+
+@processos_bp.post("/<int:pk>/atualizar-movimentacoes/")
+@login_required
+def atualizar_movimentacoes(pk):
+    processo = db.get_or_404(Processo, pk)
+    resultado = verificar_movimentacao_processo(processo)
+
+    if resultado["erro"]:
+        db.session.rollback()
+        flash(
+            f"Não foi possível atualizar o processo: {resultado['erro']}",
+            "error",
+        )
+    else:
+        db.session.commit()
+        flash(
+            f"Consulta concluída: {resultado['total_novas']} "
+            "movimentação(ões) nova(s) encontrada(s).",
+            "success",
+        )
+
+    return redirect(url_for("processos.detail", pk=processo.id))
 
 
 @processos_bp.get("/<int:pk>/")
