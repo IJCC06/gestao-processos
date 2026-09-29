@@ -1,1 +1,71 @@
-<html><body><a href="{{ url_for('dashboard') }}">Painel</a><h1>Processos</h1><a href="{{ url_for('processo_create') }}">+ Novo processo</a><form method="get"><input name="q" value="{{ busca }}" placeholder="CNJ, cliente ou tribunal"><select name="area"><option value="">Todas as áreas</option>{% for value,label in area_choices %}<option value="{{ value }}" {% if area==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><select name="status"><option value="">Todos os status</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if status==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button>Filtrar</button></form>{% for processo in processos %}<p><a href="{{ url_for('processo_detail',pk=processo.id) }}">{{ processo.numero_cnj }}</a> — {{ processo.cliente.nome }} — {{ processo.area_display() }} — {{ processo.status_display() }} — {{ processo.tribunal or '—' }} | <a href="{{ url_for('processo_update',pk=processo.id) }}">Editar</a></p>{% else %}<p>Nenhum processo encontrado.</p>{% endfor %}</body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processos | Gestão de Processos</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('dashboard.index') }}">Painel</a>
+    </nav>
+
+    <h1>Processos</h1>
+
+    <p><a href="{{ url_for('processos.create') }}">+ Novo processo</a></p>
+
+    <form method="get">
+        <label for="q">Buscar</label>
+        <input
+            id="q"
+            name="q"
+            value="{{ busca }}"
+            placeholder="CNJ, cliente ou tribunal"
+        >
+
+        <label for="area">Área</label>
+        <select id="area" name="area">
+            <option value="">Todas as áreas</option>
+            {% for value, label in area_choices %}
+                <option value="{{ value }}" {% if area == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="">Todos os status</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if status == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Filtrar</button>
+        {% if busca or area or status %}
+            <a href="{{ url_for('processos.list') }}">Limpar filtros</a>
+        {% endif %}
+    </form>
+
+    <p>{{ processos|length }} processo(s) encontrado(s).</p>
+
+    {% for processo in processos %}
+        <article>
+            <h2>
+                <a href="{{ url_for('processos.detail', pk=processo.id) }}">
+                    {{ processo.numero_cnj }}
+                </a>
+            </h2>
+            <p>Cliente: {{ processo.cliente.nome }}</p>
+            <p>Área: {{ processo.area_display() }}</p>
+            <p>Status: {{ processo.status_display() }}</p>
+            <p>Tribunal: {{ processo.tribunal or '—' }}</p>
+            <a href="{{ url_for('processos.update', pk=processo.id) }}">Editar</a>
+        </article>
+    {% else %}
+        <p>Nenhum processo encontrado.</p>
+    {% endfor %}
+</body>
+</html>
