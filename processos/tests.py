@@ -129,6 +129,9 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 200)
         self.assertIn(b"Vencido", resposta.data)
         self.assertIn(b"Proximo", resposta.data)
+        self.assertIn(b"Prazos vencidos", resposta.data)
+        self.assertIn(b"Prximos 7 dias", resposta.data)
+        self.assertIn(b"Movimenta", resposta.data)
 
     def test_criacao_de_cliente(self):
         self.login()
