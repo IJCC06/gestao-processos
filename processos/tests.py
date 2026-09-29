@@ -125,6 +125,22 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn(b"Erro interno", resposta.data)
         self.assertIn(b"Ocorreu um erro inesperado", resposta.data)
 
+    def test_login_preserva_destino_interno_seguro(self):
+        resposta = self.client.post(
+            "/login/?next=/processos/",
+            data={"username": "teste", "password": "senha-segura-123"},
+        )
+        self.assertEqual(resposta.status_code, 302)
+        self.assertEqual(resposta.location, "/processos/")
+
+    def test_login_rejeita_destino_externo(self):
+        resposta = self.client.post(
+            "/login/?next=https://exemplo.com/",
+            data={"username": "teste", "password": "senha-segura-123"},
+        )
+        self.assertEqual(resposta.status_code, 302)
+        self.assertEqual(resposta.location, "/")
+
     def test_cadastro_publico_esta_bloqueado(self):
         resposta = self.client.get("/cadastro/")
         self.assertEqual(resposta.status_code, 302)
