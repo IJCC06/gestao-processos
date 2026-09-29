@@ -1,3 +1,18 @@
+class Auditoria(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
+    acao = db.Column(db.String(30), nullable=False)
+    entidade = db.Column(db.String(50), nullable=False)
+    registro_id = db.Column(db.Integer, nullable=True)
+    detalhes = db.Column(db.Text, default="")
+    criado_em = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    usuario = db.relationship("Usuario", backref="auditorias")
+
+
 from datetime import datetime, timezone
 
 from flask_login import UserMixin
