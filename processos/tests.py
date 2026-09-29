@@ -1,5 +1,4 @@
 import os
-import tempfile
 import unittest
 from datetime import timedelta
 from unittest.mock import patch
@@ -12,18 +11,40 @@ from processos.services.movimentacoes import verificar_movimentacoes
 
 
 class FluxosPrincipaisTests(unittest.TestCase):
+    # O banco em memória evita I/O em disco e a criação de arquivos temporários.
+    # O hash abaixo é exclusivo dos testes e usa poucas iterações para acelerar
+    # login/check_password sem alterar o hash usado pela aplicação em produção.
+    TEST_PASSWORD_HASH = (
+        "pbkdf2:sha256:1000$testsalt12345678$"
+        "2ff4dfb6373dbfd4406002dd1983527ca84061feab36784fbec16a794e96372a"
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+        cls.app = create_app()
+        cls.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        with cls.app.app_context():
+            db.session.remove()
+            db.drop_all()
+            db.session.remove()
+            db.engine.dispose()
+
+        os.environ.pop("DATABASE_URL", None)
+
     def setUp(self):
-        self.db_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        self.db_file.close()
-        os.environ["DATABASE_URL"] = "sqlite:///" + self.db_file.name.replace("\\", "/")
-
-        self.app = create_app()
-        self.app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
-        self.client = self.app.test_client()
-
         with self.app.app_context():
-            usuario = Usuario(username="teste")
-            usuario.set_password("senha-segura-123")
+            db.session.remove()
+            db.drop_all()
+            db.create_all()
+
+            usuario = Usuario(
+                username="teste",
+                password_hash=self.TEST_PASSWORD_HASH,
+            )
             cliente = Cliente(nome="Cliente Teste", cpf_cnpj="12345678901")
             db.session.add_all([usuario, cliente])
             db.session.commit()
@@ -42,15 +63,11 @@ class FluxosPrincipaisTests(unittest.TestCase):
             self.cliente_id = cliente.id
             self.processo_id = processo.id
 
+        self.client = self.app.test_client()
+
     def tearDown(self):
         with self.app.app_context():
             db.session.remove()
-            db.drop_all()
-            db.session.remove()
-            db.engine.dispose()
-
-        os.unlink(self.db_file.name)
-        os.environ.pop("DATABASE_URL", None)
 
     def login(self):
         return self.client.post(
