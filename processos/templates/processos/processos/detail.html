@@ -1,1 +1,37 @@
-<html><body><a href="{{ url_for('processo_list') }}">Processos</a><h1>{{ processo.numero_cnj }}</h1><p>{{ processo.cliente.nome }}</p><p>{{ processo.area_display() }} — {{ processo.status_display() }}</p><p>{{ processo.tribunal or '—' }}</p><p><a href="{{ url_for('processo_update',pk=processo.id) }}">Editar</a> <a href="{{ url_for('prazo_create',processo=processo.id) }}">Novo prazo</a></p><h2>Prazos</h2>{% for prazo in processo.prazos %}<p><a href="{{ url_for('prazo_detail',pk=prazo.id) }}">{{ prazo.titulo }}</a> — {{ prazo.data_vencimento.strftime('%d/%m/%Y') }} — {{ prazo.status_display() }}</p>{% else %}<p>Nenhum prazo.</p>{% endfor %}<h2>Movimentações</h2>{% for m in processo.movimentacoes %}<p>{{ m.data.strftime('%d/%m/%Y %H:%M') }} — {{ m.descricao }} — {{ m.origem }}</p>{% else %}<p>Nenhuma movimentação.</p>{% endfor %}</body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ processo.numero_cnj }} | Gestão de Processos</title>
+</head>
+<body>
+    <a href="{{ url_for('processos.list') }}">Processos</a>
+    <h1>{{ processo.numero_cnj }}</h1>
+    <p>{{ processo.cliente.nome }}</p>
+    <p>{{ processo.area_display() }} — {{ processo.status_display() }}</p>
+    <p>{{ processo.tribunal or '—' }}</p>
+    <p>
+        <a href="{{ url_for('processos.update', pk=processo.id) }}">Editar</a>
+        <a href="{{ url_for('prazos.create', processo=processo.id) }}">Novo prazo</a>
+    </p>
+
+    <h2>Prazos</h2>
+    {% for prazo in processo.prazos %}
+        <p>
+            <a href="{{ url_for('prazos.detail', pk=prazo.id) }}">{{ prazo.titulo }}</a>
+            — {{ prazo.data_vencimento.strftime('%d/%m/%Y') }}
+            — {{ prazo.status_display() }}
+        </p>
+    {% else %}
+        <p>Nenhum prazo.</p>
+    {% endfor %}
+
+    <h2>Movimentações</h2>
+    {% for m in processo.movimentacoes %}
+        <p>{{ m.data.strftime('%d/%m/%Y %H:%M') }} — {{ m.descricao }} — {{ m.origem }}</p>
+    {% else %}
+        <p>Nenhuma movimentação.</p>
+    {% endfor %}
+</body>
+</html>
