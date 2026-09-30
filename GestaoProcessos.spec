@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_submodules
 
 PROJECT_DIR = Path(SPECPATH)
 
@@ -11,6 +12,7 @@ datas = [
 ]
 
 hiddenimports = [
+    "logging.config",
     "flask_migrate",
     "flask_sqlalchemy",
     "flask_login",
@@ -31,6 +33,8 @@ hiddenimports = [
     "processos.routes.sistema",
     "processos.routes.setup",
 ]
+hiddenimports += collect_submodules("processos.routes")
+hiddenimports += collect_submodules("logging")
 
 a = Analysis(
     ["scripts/desktop_launcher.py"],
