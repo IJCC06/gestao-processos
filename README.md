@@ -152,6 +152,8 @@ A consulta é feita **quando solicitada pelo usuário**. O sistema não depende 
 
 A disponibilidade das informações depende da API do DataJud e da configuração do tribunal correspondente.
 
+Em caso de falha de comunicação, o sistema registra nos logs o tribunal consultado, o código HTTP quando houver resposta e a duração da requisição. A chave da API não é registrada nos logs.
+
 ---
 
 # 2. 🧑‍💻 Desenvolvedor
