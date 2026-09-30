@@ -1,196 +1,184 @@
-# Gestão de Processos Jurídicos
+# Gestão de Processos
 
-> Sistema web local para **advogados** gerenciarem clientes, processos, prazos e movimentações processuais.
+> Aplicação desktop local para advogados gerenciarem clientes, processos, prazos e movimentações processuais em um único sistema.
 
-O sistema utiliza a **API Pública do DataJud (CNJ)** para consultar movimentações processuais.
+**Primeira versão de lançamento: v1.0.0**  
+**Desenvolvedor:** Gabriel Menegon Cassano
 
----
-
-## 🚀 Comece aqui
-
-Você está apenas **usando o sistema**?
-
-👉 Vá para [**1. Usuário**](#1-usuário).
-
-Você está **desenvolvendo, testando ou mantendo o projeto**?
-
-👉 Vá para [**2. Desenvolvedor**](#2-desenvolvedor).
+O Gestão de Processos foi desenvolvido para uso local em computadores Windows. A aplicação utiliza a **API Pública do DataJud (CNJ)** para consultar movimentações processuais quando solicitado pelo usuário.
 
 ---
 
-# 1. 👤 Usuário
+## Visão geral
 
-Esta seção é para quem vai **usar o Gestão de Processos no dia a dia**.
+O sistema reúne recursos para:
 
-## O que preciso instalar?
+- cadastro e gerenciamento de clientes;
+- cadastro e gerenciamento de processos;
+- controle de prazos;
+- dashboard com informações relevantes;
+- notificações de prazos;
+- consulta e atualização de movimentações pelo DataJud;
+- histórico de auditoria;
+- gerenciamento de usuários e permissões administrativas;
+- backup local do banco de dados.
+
+A aplicação funciona localmente no computador do escritório e **não exige Docker, Redis, Celery ou outro serviço de tarefas em segundo plano**.
+
+---
+
+## Download e instalação
+
+A versão distribuída para usuários finais é o instalador:
+
+`GestaoProcessos-Setup.exe`
+
+Os instaladores oficiais ficam na seção **Releases** do repositório.
+
+### Requisitos do usuário final
+
+O usuário final não precisa instalar:
+
+- Python;
+- Flask;
+- Git;
+- PyInstaller;
+- Inno Setup;
+- Redis;
+- Docker.
+
+O instalador já contém os componentes necessários para executar a aplicação.
 
 ### Primeira instalação
 
-Você só precisa do:
+1. Baixe o `GestaoProcessos-Setup.exe` da Release desejada.
+2. Execute o instalador.
+3. Finalize a instalação.
+4. Abra o atalho **Gestão de Processos** criado na Área de Trabalho.
+5. Na primeira execução, conclua a **Configuração Inicial**.
 
-**GestaoProcessos-Setup.exe**
-
-Você **não precisa instalar**:
-
-- Python
-- Flask
-- Git
-- PyInstaller
-- Inno Setup
-- Redis
-- Docker
-- nenhuma dependência de desenvolvimento
-
-> O aplicativo distribuído já contém o Python e as dependências necessárias.
-
----
-
-## 📥 Instalando pela primeira vez
-
-### Passo 1 — Baixe o instalador
-
-Baixe o arquivo **GestaoProcessos-Setup.exe** na versão desejada em **Releases** do GitHub.
-
-### Passo 2 — Instale
-
-Dê **duplo clique** no instalador e siga as etapas.
-
-Ao finalizar, será criado um atalho:
-
-**Área de Trabalho → Gestão de Processos**
-
-### Passo 3 — Abra o sistema
-
-Abra o atalho **Gestão de Processos**.
-
-O sistema inicia um servidor local no próprio computador e abre a aplicação no navegador.
-
-> O sistema foi pensado para funcionar localmente. Ele não precisa ser publicado na internet para ser utilizado no computador do escritório.
-
----
-
-## 🆕 Primeiro acesso
-
-Na primeira execução, o sistema apresenta a tela de **Configuração Inicial**.
-
-Nela, crie:
+Na configuração inicial, informe:
 
 - nome de usuário do administrador;
 - senha;
-- chave da API do DataJud, se quiser utilizar as consultas de movimentações.
+- chave da API Pública do DataJud.
 
-Depois da configuração, faça login normalmente.
+Depois disso, faça login normalmente.
 
-### E depois?
+### Atualização
 
-Nas próximas vezes, basta:
+Para atualizar uma instalação existente:
 
-**Área de Trabalho → Gestão de Processos → Login**
-
-Não é necessário abrir o Python ou o CMD.
-
----
-
-## 💾 Onde ficam meus dados?
-
-Os dados da aplicação são mantidos separadamente dos arquivos do programa, na pasta:
-
-**%LOCALAPPDATA%\GestaoProcessos**
-
-A ideia é manter nessa pasta:
-
-- banco de dados SQLite;
-- configurações;
-- logs;
-- backups.
-
-Isso permite que o programa seja atualizado sem substituir os dados do usuário.
-
-> **Importante:** antes de instalar uma atualização importante, é recomendado fazer um backup do banco.
-
----
-
-## 🔄 Atualizando o sistema
-
-Quando uma nova versão estiver disponível:
-
-1. faça um backup;
-2. feche o Gestão de Processos;
-3. baixe o novo **GestaoProcessos-Setup.exe**;
+1. faça um backup do banco;
+2. feche o sistema;
+3. baixe o instalador da nova versão;
 4. execute o instalador;
 5. abra o sistema novamente.
 
-As migrações do banco são aplicadas automaticamente pela aplicação quando necessário.
+As migrações do banco são aplicadas automaticamente durante a inicialização do aplicativo.
 
 ---
 
-## 🗄️ Backup
+## Dados e arquivos locais
 
-O sistema possui suporte a backup local do banco SQLite.
+O aplicativo instalado mantém os dados fora da pasta de instalação, em:
 
-### Para o usuário
+`%LOCALAPPDATA%\GestaoProcessos`
 
-Administradores podem criar um backup diretamente em **Administração → Fazer backup → Criar backup**. O arquivo é salvo em:
+Entre os arquivos e diretórios mantidos nesse local estão:
 
-`%LOCALAPPDATA%\\GestaoProcessos\\backups`
+| Local | Finalidade |
+|---|---|
+| `flask.db` | Banco de dados SQLite |
+| `.env` | Configurações locais e chave do DataJud |
+| `logs\app.log` | Logs da aplicação |
+| `logs\launcher.log` | Erros do inicializador |
+| `backups\` | Backups locais do banco |
 
-O sistema mantém, por padrão, os backups dos últimos 30 dias.
+Manter o banco separado da pasta de instalação permite atualizar o programa sem substituir os dados do usuário.
 
-Para uso cotidiano, mantenha cópias de backup em um local diferente do computador sempre que possível.
-
-### Para o desenvolvedor
-
-O comando técnico de backup continua disponível na seção de desenvolvedor.
-
----
-
-## 🌐 DataJud
-
-O Gestão de Processos pode consultar movimentações processuais através da API Pública do DataJud.
-
-A consulta é feita **quando solicitada pelo usuário**. O sistema não depende de Celery, Redis ou outro serviço de tarefas em segundo plano.
-
-A disponibilidade das informações depende da API do DataJud e da configuração do tribunal correspondente.
-
-Em caso de falha de comunicação, o sistema registra nos logs o tribunal consultado, o código HTTP quando houver resposta e a duração da requisição. A chave da API não é registrada nos logs.
+> **Importante:** o banco contém dados potencialmente sensíveis. Não compartilhe `flask.db`, arquivos de backup ou a chave do DataJud publicamente.
 
 ---
 
-# 2. 🧑‍💻 Desenvolvedor
+## Backup
 
-Esta seção é para quem vai **programar, testar, corrigir ou gerar novas versões** do projeto.
+Administradores podem criar backups em:
 
-## 🧰 Tecnologias
+**Administração → Fazer backup → Criar backup**
 
-| Parte | Tecnologia |
+Por padrão, o sistema mantém os backups dos últimos 30 dias.
+
+Para maior segurança, mantenha pelo menos uma cópia de backup em outro local, separado do computador que executa o sistema.
+
+Antes de uma atualização importante, recomenda-se criar um backup.
+
+---
+
+## DataJud
+
+O sistema utiliza a **API Pública do DataJud do Conselho Nacional de Justiça (CNJ)** para consultar movimentações processuais.
+
+A consulta é feita quando solicitada pelo usuário. O sistema não mantém um worker ou agendador de consultas em segundo plano.
+
+A disponibilidade das movimentações depende:
+
+- da disponibilidade da API do DataJud;
+- do tribunal consultado;
+- da chave de API configurada;
+- da conectividade de internet.
+
+Erros temporários, como indisponibilidade ou limitação da API, podem impedir uma consulta sem significar perda dos dados já armazenados no sistema.
+
+A chave da API não é registrada nos logs.
+
+---
+
+## Segurança e privacidade
+
+O sistema foi projetado para uso local, mas pode armazenar dados pessoais e informações relacionadas a processos.
+
+Boas práticas:
+
+- use uma senha forte para os usuários;
+- não compartilhe sua chave do DataJud;
+- não envie `.env` para o GitHub;
+- não publique o banco SQLite ou backups;
+- mantenha backups atualizados;
+- mantenha o Windows e as dependências atualizados;
+- use o sistema somente em computadores confiáveis.
+
+O Gestão de Processos é uma ferramenta de gerenciamento. A conferência das informações processuais e o cumprimento dos prazos continuam sendo responsabilidade do profissional que utiliza o sistema.
+
+---
+
+# Desenvolvimento
+
+## Tecnologias
+
+| Área | Tecnologia |
 |---|---|
 | Backend | Python + Flask |
-| Banco | SQLite |
+| Banco de dados | SQLite |
 | ORM | Flask-SQLAlchemy |
 | Migrações | Flask-Migrate + Alembic |
 | Autenticação | Flask-Login |
-| Formulários/CSRF | Flask-WTF |
+| Formulários e CSRF | Flask-WTF |
 | Templates | Jinja2 |
 | Frontend | HTML + CSS |
 | API externa | DataJud (CNJ) |
 | Testes | unittest |
 | Empacotamento | PyInstaller |
-| Instalador Windows | Inno Setup 6 |
+| Instalador | Inno Setup 6 |
 
----
+## Estrutura
 
-## 📁 Estrutura geral
-
-Principais partes do projeto:
-
-~~~text
+```text
 gestao-processos/
-│
 ├── app.py
 ├── requirements.txt
 ├── requirements-build.txt
 ├── GestaoProcessos.spec
-│
 ├── config/
 ├── migrations/
 ├── processos/
@@ -199,171 +187,165 @@ gestao-processos/
 │   ├── services/
 │   ├── templates/
 │   └── static/
-│
 ├── scripts/
-│   └── build_windows.bat
-│
+│   ├── build_windows.bat
+│   ├── backup_db.bat
+│   └── configurar_backup_automatico.bat
 ├── installer/
 │   └── GestaoProcessos.iss
-│
 └── .github/
     └── workflows/
-~~~
+```
 
 ---
 
-## 🔧 Preparando o ambiente de desenvolvimento
+## Configurando o ambiente de desenvolvimento
 
-### 1. Clone o projeto
+### 1. Clonar o repositório
 
-~~~bash
+```bash
 git clone https://github.com/IJCC06/gestao-processos.git
 cd gestao-processos
-~~~
-
-Para trabalhar na branch de desenvolvimento:
-
-~~~bash
 git checkout desenvolvimento
-~~~
+```
 
-### 2. Crie o ambiente virtual
+### 2. Criar o ambiente virtual
 
 No Windows:
 
-~~~bat
+```bat
 python -m venv venv
-~~~
+```
 
-### 3. Ative o ambiente virtual
+### 3. Ativar o ambiente virtual
 
-~~~bat
+```bat
 venv\Scripts\activate
-~~~
+```
 
-Quando aparecer **(venv)** no início da linha de comando, o ambiente está ativo.
+### 4. Instalar as dependências
 
-### 4. Instale as dependências
-
-~~~bat
+```bat
 pip install -r requirements.txt
-~~~
+```
 
----
+### 5. Configurar o ambiente
 
-## ⚙️ Configuração local
-
-Crie um arquivo **.env** na raiz do projeto.
+Crie um arquivo `.env` na raiz do projeto. Um modelo está disponível em [`.env.example`](.env.example).
 
 Exemplo:
 
-~~~env
+```env
 FLASK_SECRET_KEY=uma-chave-secreta-forte
 FLASK_DEBUG=True
 DATAJUD_API_KEY=sua-chave-do-datajud
-~~~
+```
 
-> **Nunca envie o .env para o GitHub.**
+> Nunca versione o arquivo `.env`.
 
 ---
 
-## ▶️ Executando em desenvolvimento
+## Executando em desenvolvimento
 
 Com o ambiente virtual ativado:
 
-~~~bat
+```bat
 flask --app app run --debug
-~~~
+```
 
-Depois abra no navegador:
+Abra:
 
-~~~text
+```text
 http://127.0.0.1:5000/
-~~~
-
-Para parar o servidor, use **Ctrl + C**.
+```
 
 ---
 
-## 🧪 Executando os testes
+## Testes
 
-Com o ambiente virtual ativado:
+A suíte de testes utiliza o `unittest`, sem depender do pytest.
 
-~~~bat
-python -m unittest processos.tests -v
-~~~
+Execute:
 
-Antes de enviar alterações, verifique se os testes continuam passando.
+```bat
+python -m unittest discover -v
+```
+
+Na preparação da versão **v1.0.0**, a suíte foi executada com:
+
+```text
+Ran 81 tests in 4.504s
+
+OK
+```
+
+Antes de publicar uma nova versão, execute novamente a suíte completa.
 
 ---
 
-## 🗃️ Banco de dados e migrações
+## Banco de dados e migrações
 
-O projeto utiliza **Flask-Migrate + Alembic**.
+O projeto utiliza Flask-Migrate e Alembic.
 
-### Criar uma migração
+Criar uma migração:
 
-Depois de alterar os modelos:
-
-~~~bat
+```bat
 flask --app app db migrate -m "descricao da alteracao"
-~~~
+```
 
-### Aplicar migrações
+Aplicar migrações:
 
-~~~bat
+```bat
 flask --app app db upgrade
-~~~
+```
 
-### Ver a versão atual
+Ver a versão atual:
 
-~~~bat
+```bat
 flask --app app db current
-~~~
+```
 
-> Evite alterar o banco manualmente quando a alteração puder ser representada por uma migração.
+Evite alterar o banco manualmente quando a alteração puder ser representada por uma migração.
 
 ---
 
-## 💾 Backup para desenvolvimento
+## Backup em desenvolvimento
 
-Para criar um backup do SQLite:
+Para criar um backup pelo CLI:
 
-~~~bat
+```bat
 flask --app app backup-db
-~~~
+```
 
-Por padrão, os backups são mantidos localmente.
+Também está disponível:
 
-Também existe o script:
-
-~~~bat
+```bat
 scripts\backup_db.bat
-~~~
+```
+
+O script `scripts\configurar_backup_automatico.bat` pode ser usado para configurar uma tarefa agendada do Windows em ambientes de desenvolvimento ou administração local.
 
 ---
 
-## 🏗️ Gerando o aplicativo Windows
+## Gerando o instalador Windows
 
-O desenvolvedor precisa ter:
+O ambiente de build precisa de:
 
 - Python;
 - ambiente virtual do projeto;
 - Inno Setup 6.
 
-O usuário final **não precisa dessas ferramentas**.
-
-### Gerar o instalador
+O usuário final não precisa dessas ferramentas.
 
 Na raiz do projeto:
 
-~~~bat
+```bat
 scripts\build_windows.bat
-~~~
+```
 
 O processo executa:
 
-~~~text
+```text
 Código Flask
     ↓
 PyInstaller
@@ -373,112 +355,92 @@ GestaoProcessos.exe
 Inno Setup 6
     ↓
 GestaoProcessos-Setup.exe
-~~~
+```
 
-O resultado fica em:
+O instalador é gerado em:
 
-~~~text
+```text
 installer_output\GestaoProcessos-Setup.exe
-~~~
+```
 
-### Teste antes de publicar
-
-Antes de distribuir uma nova versão:
-
-1. instale o Setup.exe;
-2. abra o aplicativo;
-3. faça a configuração inicial;
-4. crie alguns dados de teste;
-5. feche e abra novamente;
-6. confirme que os dados continuam;
-7. teste login e logout;
-8. teste DataJud;
-9. teste backup;
-10. teste migrações.
+Os diretórios de build e o instalador gerado não devem ser versionados.
 
 ---
 
-## 📦 Releases
+## Checklist de publicação
 
-O projeto possui workflow do GitHub Actions para gerar o instalador Windows quando uma tag de versão é publicada.
+Antes de publicar uma nova Release:
 
-Exemplo:
+- [ ] executar a suíte completa de testes;
+- [ ] gerar o instalador localmente;
+- [ ] instalar o `GestaoProcessos-Setup.exe` em um ambiente limpo;
+- [ ] testar a configuração inicial;
+- [ ] testar login e logout;
+- [ ] criar cliente;
+- [ ] criar processo;
+- [ ] criar prazo;
+- [ ] verificar notificações;
+- [ ] executar uma atualização pelo DataJud;
+- [ ] confirmar persistência dos dados após fechar e reabrir o aplicativo;
+- [ ] testar backup;
+- [ ] confirmar que não há `.env`, banco, logs ou outros dados pessoais no repositório;
+- [ ] conferir a versão do instalador;
+- [ ] criar a tag da versão;
+- [ ] publicar a Release.
 
-~~~bash
+---
+
+## Releases
+
+O projeto possui GitHub Actions para gerar automaticamente o instalador Windows quando uma tag no formato `v*` é publicada.
+
+Para a primeira versão:
+
+```bash
 git tag v1.0.0
 git push origin v1.0.0
-~~~
+```
 
-O workflow de release:
+O workflow:
 
-1. cria o ambiente de build;
-2. instala as dependências;
-3. gera o executável com PyInstaller;
-4. gera o instalador com Inno Setup;
-5. publica o GestaoProcessos-Setup.exe no Release.
+1. baixa o código;
+2. configura Python;
+3. instala o Inno Setup;
+4. cria o ambiente de build;
+5. gera o executável com PyInstaller;
+6. gera o instalador;
+7. anexa o `GestaoProcessos-Setup.exe` à Release.
 
-> Antes de criar uma Release, teste localmente o instalador.
-
----
-
-## 🔐 Segurança
-
-O projeto trabalha com dados pessoais e deve ser tratado com cuidado.
-
-- Não versionar .env.
-- Não publicar a chave do DataJud.
-- Usar uma FLASK_SECRET_KEY forte.
-- Manter backups.
-- Não compartilhar o banco SQLite publicamente.
-- Manter as dependências atualizadas.
-- Testar restauração de backups antes de depender deles.
+Antes de publicar a tag, faça a validação local descrita no checklist acima.
 
 ---
 
-# 3. 📌 Fluxo rápido
+## Contribuição
 
-## Para o usuário
+Alterações devem ser feitas de forma organizada e acompanhadas dos testes necessários.
 
-~~~text
-Baixar Setup.exe
-      ↓
-Instalar
-      ↓
-Abrir atalho
-      ↓
-Configuração inicial
-      ↓
-Login
-      ↓
-Usar o sistema
-~~~
+Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo recomendado de desenvolvimento.
 
-## Para o desenvolvedor
-
-~~~text
-Git clone
-    ↓
-Criar venv
-    ↓
-Instalar requirements
-    ↓
-Configurar .env
-    ↓
-Executar Flask
-    ↓
-Alterar código
-    ↓
-Executar testes
-    ↓
-Gerar Setup.exe
-    ↓
-Testar
-    ↓
-Publicar Release
-~~~
+Para informações sobre comunicação de vulnerabilidades, consulte [SECURITY.md](SECURITY.md).
 
 ---
 
-## 📝 Estado do projeto
+## Autor
 
-O projeto está em desenvolvimento contínuo. Algumas etapas de empacotamento e distribuição podem exigir validação adicional antes de uma versão ser considerada pronta para uso final.
+**Gabriel Menegon Cassano**
+
+Desenvolvedor do Gestão de Processos.
+
+---
+
+## Licença
+
+A licença do projeto ainda deve ser definida pelo mantenedor antes de uma distribuição pública do código.
+
+---
+
+## Estado da versão
+
+**v1.0.0 — lançamento inicial**
+
+A versão de lançamento foi validada com a suíte automatizada e com a geração do instalador Windows. A integração com o DataJud depende da disponibilidade da API externa e da chave de API configurada pelo usuário.
