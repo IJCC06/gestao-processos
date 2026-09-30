@@ -76,13 +76,26 @@ def configure_logging(app):
         os.makedirs(log_dir, exist_ok=True)
 
     level = getattr(logging, app.config["LOG_LEVEL"], logging.INFO)
-    app.logger.setLevel(level)
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+    )
 
-    if not any(
-        isinstance(handler, RotatingFileHandler)
-        and getattr(handler, "baseFilename", None) == os.path.abspath(log_file)
-        for handler in app.logger.handlers
-    ):
+    # O handler fica no logger raiz para que logs dos serviços, como
+    # processos.services.datajud, também sejam gravados no app.log.
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+
+    handler_existente = next(
+        (
+            handler
+            for handler in root_logger.handlers
+            if isinstance(handler, RotatingFileHandler)
+            and getattr(handler, "baseFilename", None) == os.path.abspath(log_file)
+        ),
+        None,
+    )
+
+    if handler_existente is None:
         handler = RotatingFileHandler(
             log_file,
             maxBytes=2 * 1024 * 1024,
@@ -90,13 +103,11 @@ def configure_logging(app):
             encoding="utf-8",
         )
         handler.setLevel(level)
-        handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-            )
-        )
-        app.logger.addHandler(handler)
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
 
+    app.logger.setLevel(level)
+    app.logger.propagate = True
     logging.getLogger("werkzeug").setLevel(level)
 
 
