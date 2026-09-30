@@ -423,6 +423,14 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 200)
         self.assertIn(b"0000000-49.2026.8.00.0000", resposta.data)
 
+    def test_normalizacao_aceita_numero_cnj_valido_trt15(self):
+        from processos.routes.processos import normalizar_numero_cnj
+
+        self.assertEqual(
+            normalizar_numero_cnj("0010220-08.2025.5.15.0012"),
+            "0010220-08.2025.5.15.0012",
+        )
+
     def test_criacao_de_processo(self):
         self.login()
         resposta = self.client.post(
