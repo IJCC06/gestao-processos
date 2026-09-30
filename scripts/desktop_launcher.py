@@ -39,10 +39,15 @@ def _prepare_environment() -> None:
     os.environ.setdefault("FLASK_SECRET_KEY", secrets.token_urlsafe(48))
     os.environ.setdefault("FLASK_DEBUG", "False")
 
+    # O aplicativo instalado não deve gravar o banco dentro de Program Files.
+    database_file = data_dir / "flask.db"
+    os.environ["DATABASE_URL"] = f"sqlite:///{database_file.as_posix()}"
+
     if not env_file.exists():
         env_file.write_text(
             f"FLASK_SECRET_KEY={os.environ['FLASK_SECRET_KEY']}\n"
-            "FLASK_DEBUG=False\n",
+            "FLASK_DEBUG=False\n"
+            f"DATABASE_URL={os.environ['DATABASE_URL']}\n",
             encoding="utf-8",
         )
 
