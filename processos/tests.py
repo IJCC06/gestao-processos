@@ -806,11 +806,12 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         post.side_effect = requests.RequestException("detalhe interno da biblioteca")
 
-        with self.assertRaises(DataJudError) as contexto:
-            consultar_movimentacoes(
-                "0000000-18.2026.8.00.0000",
-                "tst",
-            )
+        with patch.dict(os.environ, {"DATAJUD_API_KEY": "chave-de-teste"}):
+            with self.assertRaises(DataJudError) as contexto:
+                consultar_movimentacoes(
+                    "0000000-18.2026.8.00.0000",
+                    "tst",
+                )
 
         self.assertEqual(
             str(contexto.exception),
