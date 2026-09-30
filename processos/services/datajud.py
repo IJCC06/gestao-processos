@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 
 import requests
 
@@ -60,6 +61,8 @@ def consultar_movimentacoes(numero_cnj: str, tribunal_alias: str) -> list[dict]:
     }
     body = {"query": {"match": {"numeroProcesso": numero_limpo}}}
 
+    inicio = time.perf_counter()
+
     try:
         resposta = requests.post(
             url,
@@ -68,18 +71,44 @@ def consultar_movimentacoes(numero_cnj: str, tribunal_alias: str) -> list[dict]:
             timeout=(CONNECT_TIMEOUT, READ_TIMEOUT),
         )
     except requests.Timeout as exc:
-        logger.warning("Timeout ao consultar DataJud: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
+        duracao = time.perf_counter() - inicio
+        logger.warning(
+            "Timeout ao consultar DataJud: alias=%s cnj_final=%s duracao=%.2fs",
+            tribunal_alias,
+            numero_limpo[-4:],
+            duracao,
+        )
         raise DataJudError(
             "O DataJud demorou demais para responder. Tente novamente."
         ) from exc
     except requests.ConnectionError as exc:
-        logger.warning("Falha de conexão com DataJud: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
+        duracao = time.perf_counter() - inicio
+        logger.warning(
+            "Falha de conexão com DataJud: alias=%s cnj_final=%s duracao=%.2fs",
+            tribunal_alias,
+            numero_limpo[-4:],
+            duracao,
+        )
         raise DataJudError(
             "Não foi possível conectar ao DataJud. Verifique a conexão e tente novamente."
         ) from exc
     except requests.RequestException as exc:
-        logger.exception("Falha inesperada de comunicação com DataJud: alias=%s cnj_final=%s", tribunal_alias, numero_limpo[-4:])
+        duracao = time.perf_counter() - inicio
+        logger.exception(
+            "Falha inesperada de comunicação com DataJud: alias=%s cnj_final=%s duracao=%.2fs",
+            tribunal_alias,
+            numero_limpo[-4:],
+            duracao,
+        )
         raise DataJudError("Falha de comunicação com o DataJud. Tente novamente.") from exc
+
+    duracao = time.perf_counter() - inicio
+    logger.info(
+        "Resposta do DataJud: alias=%s status=%s duracao=%.2fs",
+        tribunal_alias,
+        resposta.status_code,
+        duracao,
+    )
 
     if resposta.status_code >= 400:
         logger.warning("DataJud retornou HTTP %s: alias=%s cnj_final=%s", resposta.status_code, tribunal_alias, numero_limpo[-4:])
