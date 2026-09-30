@@ -61,7 +61,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
             processo = Processo(
                 cliente=cliente,
-                numero_cnj="0000000-49.2026.8.00.0000",
+                numero_cnj="0000000-18.2026.8.00.0000",
                 area=Processo.Area.CIVEL,
                 tribunal="Tribunal de Teste",
                 tribunal_alias="tst",
@@ -405,7 +405,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get("/processos/")
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"0000000-49.2026.8.00.0000", resposta.data)
+        self.assertIn(b"0000000-18.2026.8.00.0000", resposta.data)
         self.assertIn(b"Cliente Teste", resposta.data)
         self.assertIn(b"Novo processo", resposta.data)
 
@@ -421,7 +421,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             query_string={"status": Processo.Status.ATIVO},
         )
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"0000000-49.2026.8.00.0000", resposta.data)
+        self.assertIn(b"0000000-18.2026.8.00.0000", resposta.data)
 
     def test_normalizacao_aceita_numero_cnj_valido_trt15(self):
         from processos.routes.processos import normalizar_numero_cnj
@@ -437,7 +437,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             "/processos/novo/",
             data={
                 "cliente": self.cliente_id,
-                "numero_cnj": "1111111-62.2026.8.00.0000",
+                "numero_cnj": "1111111-87.2026.8.00.0000",
                 "area": Processo.Area.TRABALHISTA,
                 "tribunal": "Tribunal de Teste",
                 "tribunal_alias": "tst",
@@ -452,7 +452,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         with self.app.app_context():
             self.assertIsNotNone(
                 Processo.query.filter_by(
-                    numero_cnj="1111111-62.2026.8.00.0000"
+                    numero_cnj="1111111-87.2026.8.00.0000"
                 ).first()
             )
 
@@ -484,7 +484,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertEqual(resposta.status_code, 200)
         self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
         self.assertIn(b"2222222-89.2026.8.02.0002", resposta.data)
-        self.assertNotIn(b"0000000-49.2026.8.00.0000", resposta.data)
+        self.assertNotIn(b"0000000-18.2026.8.00.0000", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"q": "TRT da 2"})
         self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
@@ -492,7 +492,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         resposta = self.client.get("/processos/", query_string={"status": Processo.Status.SUSPENSO})
         self.assertIn(b"1111111-69.2026.8.01.0001", resposta.data)
-        self.assertNotIn(b"0000000-49.2026.8.00.0000", resposta.data)
+        self.assertNotIn(b"0000000-18.2026.8.00.0000", resposta.data)
 
         resposta = self.client.get("/processos/", query_string={"area": Processo.Area.PREVIDENCIARIO})
         self.assertIn(b"2222222-89.2026.8.02.0002", resposta.data)
@@ -534,7 +534,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.login()
         resposta = self.client.get(f"/processos/{self.processo_id}/")
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"Processo 0000000-49.2026.8.00.0000", resposta.data)
+        self.assertIn(b"Processo 0000000-18.2026.8.00.0000", resposta.data)
         self.assertIn(b"Cliente Teste", resposta.data)
         self.assertIn(b"Intima", resposta.data)
         self.assertIn(b"Manifest", resposta.data)
@@ -742,7 +742,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         with self.assertRaises(DataJudError) as contexto:
             consultar_movimentacoes(
-                "0000000-49.2026.8.00.0000",
+                "0000000-18.2026.8.00.0000",
                 "tst",
             )
 
@@ -816,7 +816,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.login()
         base = {
             "cliente": self.cliente_id,
-            "numero_cnj": "3333333-88.2026.8.00.0000",
+            "numero_cnj": "3333333-31.2026.8.00.0000",
             "area": "inexistente",
             "tribunal": "Tribunal de Teste",
             "status": "inexistente",
@@ -842,7 +842,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             f"/processos/{self.processo_id}/editar/",
             data={
                 "cliente": self.cliente_id,
-                "numero_cnj": "9999999-99.2026.8.00.0000",
+                "numero_cnj": "9999999-57.2026.8.00.0000",
                 "area": "invalida",
                 "tribunal": "Tribunal Digitado",
                 "tribunal_alias": "alias-digitado",
@@ -854,7 +854,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
         )
 
         self.assertEqual(resposta.status_code, 200)
-        self.assertIn(b"9999999-99.2026.8.00.0000", resposta.data)
+        self.assertIn(b"9999999-57.2026.8.00.0000", resposta.data)
         self.assertIn(b"Tribunal Digitado", resposta.data)
         self.assertIn(b"alias-digitado", resposta.data)
         self.assertIn(b"Fase Digitada", resposta.data)
@@ -862,7 +862,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         with self.app.app_context():
             processo = db.session.get(Processo, self.processo_id)
-            self.assertEqual(processo.numero_cnj, "0000000-49.2026.8.00.0000")
+            self.assertEqual(processo.numero_cnj, "0000000-18.2026.8.00.0000")
 
     def test_edicao_de_processo_atualiza_dados(self):
         self.login()
@@ -870,7 +870,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             f"/processos/{self.processo_id}/editar/",
             data={
                 "cliente": self.cliente_id,
-                "numero_cnj": "3333333-88.2026.8.00.0000",
+                "numero_cnj": "3333333-31.2026.8.00.0000",
                 "area": Processo.Area.TRABALHISTA,
                 "tribunal": "TRT de Teste",
                 "tribunal_alias": "trt1",
@@ -885,7 +885,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
 
         with self.app.app_context():
             processo = db.session.get(Processo, self.processo_id)
-            self.assertEqual(processo.numero_cnj, "3333333-88.2026.8.00.0000")
+            self.assertEqual(processo.numero_cnj, "3333333-31.2026.8.00.0000")
             self.assertEqual(processo.area, Processo.Area.TRABALHISTA)
             self.assertEqual(processo.status, Processo.Status.SUSPENSO)
             self.assertEqual(str(processo.valor_causa), "2500.50")
@@ -897,7 +897,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
             "/processos/novo/",
             data={
                 "cliente": self.cliente_id,
-                "numero_cnj": "0000000-49.2026.8.00.0000",
+                "numero_cnj": "0000000-18.2026.8.00.0000",
                 "area": Processo.Area.CIVEL,
                 "tribunal": "Outro Tribunal",
                 "status": Processo.Status.ATIVO,
