@@ -12,11 +12,11 @@ on:
 jobs:
   testes:
     name: Testes automatizados
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Baixar código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurar Python
         uses: actions/setup-python@v6
