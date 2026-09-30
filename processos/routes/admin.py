@@ -80,7 +80,7 @@ def configuracao():
             valores.get("FLASK_DEBUG", "False"),
         )
         valores["DATAJUD_API_KEY"] = datajud_key
-        valores["DATABASE_URL"] = valores.get("DATABASE_URL", "sqlite:///flask.db")
+        valores.pop("DATABASE_URL", None)
 
         env_file.write_text(
             "".join(f"{chave}={valor}\n" for chave, valor in valores.items()),
