@@ -1081,6 +1081,33 @@ class FluxosPrincipaisTests(unittest.TestCase):
         self.assertIn(b"Painel administrativo", resposta.data)
         self.assertIn("Usuários".encode("utf-8"), resposta.data)
 
+    @patch("processos.services.backup.backup_sqlite")
+    def test_admin_pode_criar_backup_pelo_painel(self, backup_mock):
+        from pathlib import Path
+
+        backup_mock.return_value = Path("backups/flask_20260930_120000.db")
+        self.admin_login()
+
+        resposta = self.client.post("/admin/backup/")
+
+        self.assertEqual(resposta.status_code, 302)
+        self.assertEqual(resposta.location, "/admin/")
+        backup_mock.assert_called_once()
+
+        with self.app.app_context():
+            registro = Auditoria.query.filter_by(
+                acao="BACKUP",
+                entidade="Sistema",
+            ).order_by(Auditoria.id.desc()).first()
+            self.assertIsNotNone(registro)
+            self.assertEqual(registro.usuario_id, self.usuario_id)
+            self.assertIn("flask_20260930_120000.db", registro.detalhes)
+
+        resposta = self.client.get("/admin/")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(b"Fazer backup", resposta.data)
+        self.assertIn(b"Criar backup", resposta.data)
+
     def test_admin_pode_criar_usuario(self):
         self.admin_login()
         resposta = self.client.post(
