@@ -128,9 +128,19 @@ As migrações do banco são aplicadas automaticamente pela aplicação quando n
 
 O sistema possui suporte a backup local do banco SQLite.
 
+### Para o usuário
+
+Administradores podem criar um backup diretamente em **Administração → Fazer backup → Criar backup**. O arquivo é salvo em:
+
+`%LOCALAPPDATA%\\GestaoProcessos\\backups`
+
+O sistema mantém, por padrão, os backups dos últimos 30 dias.
+
 Para uso cotidiano, mantenha cópias de backup em um local diferente do computador sempre que possível.
 
-O comando técnico de backup está documentado na seção de desenvolvedor.
+### Para o desenvolvedor
+
+O comando técnico de backup continua disponível na seção de desenvolvedor.
 
 ---
 
