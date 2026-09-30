@@ -88,8 +88,11 @@ class DataJudServiceTests(unittest.TestCase):
                 "tst",
             )
 
+    @patch("processos.services.datajud.logger.warning")
     @patch("processos.services.datajud.requests.post")
-    def test_http_429_informa_limite_temporario(self, post):
+    def test_http_429_informa_limite_temporario_e_registra_log(
+        self, post, logger_warning
+    ):
         resposta = Mock(status_code=429)
         post.return_value = resposta
 
@@ -98,6 +101,12 @@ class DataJudServiceTests(unittest.TestCase):
                 "0000000-49.2026.8.00.0000",
                 "tst",
             )
+
+        logger_warning.assert_called_once()
+        self.assertIn("DataJud retornou HTTP %s", logger_warning.call_args.args[0])
+        self.assertEqual(logger_warning.call_args.args[1], 429)
+        self.assertEqual(logger_warning.call_args.args[2], "tst")
+        self.assertEqual(logger_warning.call_args.args[3], "0000")
 
     @patch("processos.services.datajud.requests.post")
     def test_http_500_informa_indisponibilidade(self, post):
