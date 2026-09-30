@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+{% block title %}Configuração | Gestão de Processos{% endblock %}
+{% block heading %}Configuração do sistema{% endblock %}
+{% block content %}
+<section class="dashboard-section">
+  <div class="section-heading">
+    <h2>DataJud</h2>
+    <span class="section-count">Integração com o CNJ</span>
+  </div>
+
+  <div class="card">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <p>
+      Informe a chave da API pública do DataJud para permitir que o sistema
+      consulte as movimentações dos processos.
+    </p>
+
+    <p>
+      Status:
+      <span class="status-pill {{ 'ok' if datajud_configurado else 'warning' }}">
+        {{ 'Configurada' if datajud_configurado else 'Não configurada' }}
+      </span>
+    </p>
+
+    <form method="post" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label for="datajud_api_key">Chave da API DataJud</label>
+      <input
+        id="datajud_api_key"
+        name="datajud_api_key"
+        type="password"
+        autocomplete="new-password"
+        required
+      >
+
+      <p class="form-help">
+        A chave não é exibida na tela e fica armazenada na configuração local
+        do computador.
+      </p>
+
+      <button class="button primary" type="submit">Salvar chave</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
