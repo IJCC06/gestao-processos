@@ -20,6 +20,16 @@ hiddenimports = [
     "dotenv",
     "requests",
     "logging.config",
+    "processos.routes.auth",
+    "processos.routes.clientes",
+    "processos.routes.processos",
+    "processos.routes.prazos",
+    "processos.routes.notificacoes",
+    "processos.routes.dashboard",
+    "processos.routes.admin",
+    "processos.routes.auditoria",
+    "processos.routes.sistema",
+    "processos.routes.setup",
 ]
 
 a = Analysis(
