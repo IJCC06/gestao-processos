@@ -5,6 +5,16 @@ __pycache__/
 venv/
 .venv/
 
+# Testes e ferramentas
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build e distribuição
+build/
+dist/
+installer_output/
+
 # Banco de dados local
 *.db
 *.sqlite3
@@ -12,6 +22,7 @@ venv/
 # Arquivos de ambiente e logs
 .env
 *.log
+logs/
 
 # Arquivos gerados pela aplicação
 media/
