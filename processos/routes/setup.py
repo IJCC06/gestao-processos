@@ -37,6 +37,8 @@ def inicial():
             flash("A senha deve ter pelo menos 8 caracteres.", "error")
         elif senha != confirmacao:
             flash("As senhas não coincidem.", "error")
+        elif not datajud_key:
+            flash("Informe a chave da API DataJud para concluir a configuração.", "error")
         else:
             usuario = Usuario(
                 username=username,
