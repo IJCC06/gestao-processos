@@ -29,6 +29,9 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard.index"))
 
+    if db.session.scalar(db.select(Usuario.id).limit(1)) is None:
+        return redirect(url_for("setup.inicial"))
+
     next_url = _safe_next_url(request.args.get("next") or request.form.get("next"))
 
     if request.method == "POST":

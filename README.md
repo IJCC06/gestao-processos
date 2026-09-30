@@ -1,160 +1,446 @@
-# Sistema de Gestão de Processos Jurídicos
+# Gestão de Processos
 
-Sistema web para advogados gerenciarem clientes, processos judiciais, prazos e movimentações processuais. A aplicação utiliza a API pública do DataJud (CNJ) para consultar movimentações de processos.
+> Aplicação desktop local para advogados gerenciarem clientes, processos, prazos e movimentações processuais em um único sistema.
 
-## Stack
+**Primeira versão de lançamento: v1.0.0**  
+**Desenvolvedor:** Gabriel Menegon Cassano
 
-- Backend: Python + Flask
-- ORM e banco: Flask-SQLAlchemy + SQLite por padrão
-- Migrações: Flask-Migrate + Alembic
-- Autenticação: Flask-Login
-- Formulários e CSRF: Flask-WTF
-- Frontend: Jinja2 Templates + HTML/CSS
-- Integração externa: API Pública do DataJud (CNJ)
+O Gestão de Processos foi desenvolvido para uso local em computadores Windows. A aplicação utiliza a **API Pública do DataJud (CNJ)** para consultar movimentações processuais quando solicitado pelo usuário.
 
-## Funcionalidades implementadas
+---
 
-- Autenticação de usuários
-- Dashboard
-- Cadastro de clientes com normalização e validação de CPF/CNPJ
-- Cadastro de processos com validação de dados
-- Página de detalhes do processo com resumo, prazos pendentes, movimentações e alertas
-- Busca de processos por número CNJ, cliente ou tribunal
-- Validação do número CNJ conforme o formato padronizado e dígitos verificadores
-- Validação de área e status do processo
-- Validação de valores da causa e honorários, aceitando apenas valores válidos e não negativos
-- Edição de processos com preservação dos dados digitados quando houver erro
-- Exclusão de processos com remoção em cascata de prazos e movimentações vinculados
+## Visão geral
 
-- Filtros de processos por área e status
-- Cadastro de prazos
-- Área de notificações com resumo de prazos e movimentações pendentes
-- Consulta manual de movimentações pelo DataJud, inclusive por processo
-- Prevenção de duplicação de movimentações
-- Proteção CSRF nos formulários
-- Configuração por variáveis de ambiente
-- Testes automatizados dos principais fluxos
+O sistema reúne recursos para:
 
-## Atualização das movimentações
+- cadastro e gerenciamento de clientes;
+- cadastro e gerenciamento de processos;
+- controle de prazos;
+- dashboard com informações relevantes;
+- notificações de prazos;
+- consulta e atualização de movimentações pelo DataJud;
+- histórico de auditoria;
+- gerenciamento de usuários e permissões administrativas;
+- backup local do banco de dados.
 
-A atualização é feita manualmente dentro do sistema. Na área de notificações é possível atualizar os processos não arquivados em uma única operação, e na página de detalhes é possível atualizar somente um processo específico. Não há dependência de Celery, Redis ou outro serviço de tarefas em segundo plano.
+A aplicação funciona localmente no computador do escritório e **não exige Docker, Redis, Celery ou outro serviço de tarefas em segundo plano**.
 
-A rotina valida as movimentações recebidas e grava somente novidades. Erros de configuração ou de comunicação com o DataJud são informados na interface, sem interromper a atualização dos demais processos em uma atualização geral.
+---
 
-Também é possível executar a rotina pela CLI do Flask:
+## Download e instalação
 
-    flask verificar-movimentacoes
+A versão distribuída para usuários finais é o instalador:
 
-## Instalação no Windows
+`GestaoProcessos-Setup.exe`
 
-A instalação foi preparada para que um usuário sem conhecimento de programação possa configurar o sistema com um único instalador.
+Os instaladores oficiais ficam na seção **Releases** do repositório.
 
-### Requisitos
+### Requisitos do usuário final
 
-- Windows 10 ou Windows 11
-- Python 3 instalado no computador
-- Acesso à internet durante a instalação, para baixar as dependências
-- Chave da API pública do DataJud, caso o monitoramento de processos seja utilizado
+O usuário final não precisa instalar:
 
-### Instalação
+- Python;
+- Flask;
+- Git;
+- PyInstaller;
+- Inno Setup;
+- Redis;
+- Docker.
 
-1. Baixe o código da versão mais recente pela área **Releases** do GitHub.
-2. Extraia o arquivo ZIP em uma pasta do computador.
-3. Entre na pasta extraída.
-4. Dê dois cliques em:
+O instalador já contém os componentes necessários para executar a aplicação.
 
-       scripts\instalar_sistema.bat
+### Primeira instalação
 
-5. O instalador irá:
-   - criar o ambiente virtual Python;
-   - instalar as dependências;
-   - criar automaticamente uma chave secreta para a instalação;
-   - solicitar a chave do DataJud;
-   - preparar o banco SQLite com as migrações;
-   - solicitar os dados do primeiro administrador;
-   - criar o atalho **Gestão de Processos** na Área de Trabalho.
+1. Baixe o `GestaoProcessos-Setup.exe` da Release desejada.
+2. Execute o instalador.
+3. Finalize a instalação.
+4. Abra o atalho **Gestão de Processos** criado na Área de Trabalho.
+5. Na primeira execução, conclua a **Configuração Inicial**.
 
-A senha do administrador deve ter pelo menos 8 caracteres.
+Na configuração inicial, informe:
 
-A chave do DataJud pode ser deixada em branco durante a instalação e configurada posteriormente no arquivo `.env`.
+- nome de usuário do administrador;
+- senha;
+- chave da API Pública do DataJud.
 
-### Uso diário
+Depois disso, faça login normalmente.
 
-Depois da instalação, não é necessário abrir o CMD.
+### Atualização
 
-Basta dar dois cliques no atalho **Gestão de Processos** criado na Área de Trabalho. O sistema inicia o servidor local e abre o navegador automaticamente.
+Para atualizar uma instalação existente:
 
-### Configuração do DataJud
+1. faça um backup do banco;
+2. feche o sistema;
+3. baixe o instalador da nova versão;
+4. execute o instalador;
+5. abra o sistema novamente.
 
-A chave da API fica somente no arquivo local `.env` e não deve ser enviada ao GitHub.
+As migrações do banco são aplicadas automaticamente durante a inicialização do aplicativo.
 
-Se for necessário configurá-la depois da instalação, abra o arquivo:
+---
 
-       .env
+## Dados e arquivos locais
 
-e preencha:
+O aplicativo instalado mantém os dados fora da pasta de instalação, em:
 
-       DATAJUD_API_KEY=sua-chave-do-datajud
+`%LOCALAPPDATA%\GestaoProcessos`
 
-### Atualização de uma instalação existente
+Entre os arquivos e diretórios mantidos nesse local estão:
 
-Para atualizar uma instalação já existente:
+| Local | Finalidade |
+|---|---|
+| `flask.db` | Banco de dados SQLite |
+| `.env` | Configurações locais e chave do DataJud |
+| `logs\app.log` | Logs da aplicação |
+| `logs\launcher.log` | Erros do inicializador |
+| `backups\` | Backups locais do banco |
 
-1. Faça uma cópia/backup do banco `flask.db`.
-2. Baixe a nova versão.
-3. Substitua os arquivos do sistema, preservando o arquivo `.env` e o banco local.
-4. Execute novamente `scripts\\instalar_sistema.bat`.
+Manter o banco separado da pasta de instalação permite atualizar o programa sem substituir os dados do usuário.
 
-O instalador é preparado para reaproveitar o ambiente virtual, a configuração existente e o banco. As novas migrações serão aplicadas automaticamente.
+> **Importante:** o banco contém dados potencialmente sensíveis. Não compartilhe `flask.db`, arquivos de backup ou a chave do DataJud publicamente.
 
-### Instalação manual
+---
 
-Para desenvolvimento ou manutenção, também é possível configurar o projeto manualmente:
+## Backup
 
-    python -m venv .venv
+Administradores podem criar backups em:
 
-No Windows:
+**Administração → Fazer backup → Criar backup**
 
-    .venv\Scripts\activate
+Por padrão, o sistema mantém os backups dos últimos 30 dias.
 
-Instale as dependências:
+Para maior segurança, mantenha pelo menos uma cópia de backup em outro local, separado do computador que executa o sistema.
 
-    pip install -r requirements.txt
+Antes de uma atualização importante, recomenda-se criar um backup.
 
-Copie `.env.example` para `.env` e configure:
-
-    FLASK_SECRET_KEY=sua-chave-secreta
-    DATAJUD_API_KEY=sua-chave-do-datajud
-
-Depois aplique as migrações:
-
-    flask --app app db upgrade
-
-O banco padrão é SQLite.
-
-## Execução
-
-    flask --app app run --debug
-
-A aplicação também pode ser executada com:
-
-    python app.py
-
-## Segurança
-
-O sistema lida com dados pessoais e deve ser configurado com atenção antes de qualquer uso em produção.
-
-- Segredos devem ficar em variáveis de ambiente.
-- .env não deve ser versionado.
-- CSRF está habilitado por meio do Flask-WTF.
-- Senhas são armazenadas usando hash.
-- HTTPS deve ser utilizado em produção.
-- A chave secreta padrão deve ser substituída por uma chave forte.
-- Backups locais são gerados pelo comando `backup-db` e podem ser agendados no Windows.
-- O procedimento de restauração deve ser testado periodicamente antes do uso real.
+---
 
 ## DataJud
 
-A disponibilidade e o conteúdo das movimentações dependem da API pública do DataJud e da configuração correta do tribunal.
+O sistema utiliza a **API Pública do DataJud do Conselho Nacional de Justiça (CNJ)** para consultar movimentações processuais.
 
-A chave da API deve ser configurada em DATAJUD_API_KEY e não deve ser publicada no repositório.
+A consulta é feita quando solicitada pelo usuário. O sistema não mantém um worker ou agendador de consultas em segundo plano.
+
+A disponibilidade das movimentações depende:
+
+- da disponibilidade da API do DataJud;
+- do tribunal consultado;
+- da chave de API configurada;
+- da conectividade de internet.
+
+Erros temporários, como indisponibilidade ou limitação da API, podem impedir uma consulta sem significar perda dos dados já armazenados no sistema.
+
+A chave da API não é registrada nos logs.
+
+---
+
+## Segurança e privacidade
+
+O sistema foi projetado para uso local, mas pode armazenar dados pessoais e informações relacionadas a processos.
+
+Boas práticas:
+
+- use uma senha forte para os usuários;
+- não compartilhe sua chave do DataJud;
+- não envie `.env` para o GitHub;
+- não publique o banco SQLite ou backups;
+- mantenha backups atualizados;
+- mantenha o Windows e as dependências atualizados;
+- use o sistema somente em computadores confiáveis.
+
+O Gestão de Processos é uma ferramenta de gerenciamento. A conferência das informações processuais e o cumprimento dos prazos continuam sendo responsabilidade do profissional que utiliza o sistema.
+
+---
+
+# Desenvolvimento
+
+## Tecnologias
+
+| Área | Tecnologia |
+|---|---|
+| Backend | Python + Flask |
+| Banco de dados | SQLite |
+| ORM | Flask-SQLAlchemy |
+| Migrações | Flask-Migrate + Alembic |
+| Autenticação | Flask-Login |
+| Formulários e CSRF | Flask-WTF |
+| Templates | Jinja2 |
+| Frontend | HTML + CSS |
+| API externa | DataJud (CNJ) |
+| Testes | unittest |
+| Empacotamento | PyInstaller |
+| Instalador | Inno Setup 6 |
+
+## Estrutura
+
+```text
+gestao-processos/
+├── app.py
+├── requirements.txt
+├── requirements-build.txt
+├── GestaoProcessos.spec
+├── config/
+├── migrations/
+├── processos/
+│   ├── models.py
+│   ├── routes/
+│   ├── services/
+│   ├── templates/
+│   └── static/
+├── scripts/
+│   ├── build_windows.bat
+│   ├── backup_db.bat
+│   └── configurar_backup_automatico.bat
+├── installer/
+│   └── GestaoProcessos.iss
+└── .github/
+    └── workflows/
+```
+
+---
+
+## Configurando o ambiente de desenvolvimento
+
+### 1. Clonar o repositório
+
+```bash
+git clone https://github.com/IJCC06/gestao-processos.git
+cd gestao-processos
+git checkout desenvolvimento
+```
+
+### 2. Criar o ambiente virtual
+
+No Windows:
+
+```bat
+python -m venv venv
+```
+
+### 3. Ativar o ambiente virtual
+
+```bat
+venv\Scripts\activate
+```
+
+### 4. Instalar as dependências
+
+```bat
+pip install -r requirements.txt
+```
+
+### 5. Configurar o ambiente
+
+Crie um arquivo `.env` na raiz do projeto. Um modelo está disponível em [`.env.example`](.env.example).
+
+Exemplo:
+
+```env
+FLASK_SECRET_KEY=uma-chave-secreta-forte
+FLASK_DEBUG=True
+DATAJUD_API_KEY=sua-chave-do-datajud
+```
+
+> Nunca versione o arquivo `.env`.
+
+---
+
+## Executando em desenvolvimento
+
+Com o ambiente virtual ativado:
+
+```bat
+flask --app app run --debug
+```
+
+Abra:
+
+```text
+http://127.0.0.1:5000/
+```
+
+---
+
+## Testes
+
+A suíte de testes utiliza o `unittest`, sem depender do pytest.
+
+Execute:
+
+```bat
+python -m unittest discover -v
+```
+
+Na preparação da versão **v1.0.0**, a suíte foi executada com:
+
+```text
+Ran 81 tests in 4.504s
+
+OK
+```
+
+Antes de publicar uma nova versão, execute novamente a suíte completa.
+
+---
+
+## Banco de dados e migrações
+
+O projeto utiliza Flask-Migrate e Alembic.
+
+Criar uma migração:
+
+```bat
+flask --app app db migrate -m "descricao da alteracao"
+```
+
+Aplicar migrações:
+
+```bat
+flask --app app db upgrade
+```
+
+Ver a versão atual:
+
+```bat
+flask --app app db current
+```
+
+Evite alterar o banco manualmente quando a alteração puder ser representada por uma migração.
+
+---
+
+## Backup em desenvolvimento
+
+Para criar um backup pelo CLI:
+
+```bat
+flask --app app backup-db
+```
+
+Também está disponível:
+
+```bat
+scripts\backup_db.bat
+```
+
+O script `scripts\configurar_backup_automatico.bat` pode ser usado para configurar uma tarefa agendada do Windows em ambientes de desenvolvimento ou administração local.
+
+---
+
+## Gerando o instalador Windows
+
+O ambiente de build precisa de:
+
+- Python;
+- ambiente virtual do projeto;
+- Inno Setup 6.
+
+O usuário final não precisa dessas ferramentas.
+
+Na raiz do projeto:
+
+```bat
+scripts\build_windows.bat
+```
+
+O processo executa:
+
+```text
+Código Flask
+    ↓
+PyInstaller
+    ↓
+GestaoProcessos.exe
+    ↓
+Inno Setup 6
+    ↓
+GestaoProcessos-Setup.exe
+```
+
+O instalador é gerado em:
+
+```text
+installer_output\GestaoProcessos-Setup.exe
+```
+
+Os diretórios de build e o instalador gerado não devem ser versionados.
+
+---
+
+## Checklist de publicação
+
+Antes de publicar uma nova Release:
+
+- [ ] executar a suíte completa de testes;
+- [ ] gerar o instalador localmente;
+- [ ] instalar o `GestaoProcessos-Setup.exe` em um ambiente limpo;
+- [ ] testar a configuração inicial;
+- [ ] testar login e logout;
+- [ ] criar cliente;
+- [ ] criar processo;
+- [ ] criar prazo;
+- [ ] verificar notificações;
+- [ ] executar uma atualização pelo DataJud;
+- [ ] confirmar persistência dos dados após fechar e reabrir o aplicativo;
+- [ ] testar backup;
+- [ ] confirmar que não há `.env`, banco, logs ou outros dados pessoais no repositório;
+- [ ] conferir a versão do instalador;
+- [ ] criar a tag da versão;
+- [ ] publicar a Release.
+
+---
+
+## Releases
+
+O projeto possui GitHub Actions para gerar automaticamente o instalador Windows quando uma tag no formato `v*` é publicada.
+
+Para a primeira versão:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+O workflow:
+
+1. baixa o código;
+2. configura Python;
+3. instala o Inno Setup;
+4. cria o ambiente de build;
+5. gera o executável com PyInstaller;
+6. gera o instalador;
+7. anexa o `GestaoProcessos-Setup.exe` à Release.
+
+Antes de publicar a tag, faça a validação local descrita no checklist acima.
+
+---
+
+## Contribuição
+
+Alterações devem ser feitas de forma organizada e acompanhadas dos testes necessários.
+
+Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para o fluxo recomendado de desenvolvimento.
+
+Para informações sobre comunicação de vulnerabilidades, consulte [SECURITY.md](SECURITY.md).
+
+---
+
+## Autor
+
+**Gabriel Menegon Cassano**
+
+Desenvolvedor do Gestão de Processos.
+
+---
+
+## Licença
+
+A licença do projeto ainda deve ser definida pelo mantenedor antes de uma distribuição pública do código.
+
+---
+
+## Estado da versão
+
+**v1.0.0 — lançamento inicial**
+
+A versão de lançamento foi validada com a suíte automatizada e com a geração do instalador Windows. A integração com o DataJud depende da disponibilidade da API externa e da chave de API configurada pelo usuário.

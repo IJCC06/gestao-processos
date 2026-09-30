@@ -1,9 +1,21 @@
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+if getattr(sys, "frozen", False):
+    DATA_DIR = Path(
+        os.environ.get(
+            "GESTAO_PROCESSOS_DATA_DIR",
+            Path.home() / "AppData" / "Local" / "GestaoProcessos",
+        )
+    )
+else:
+    DATA_DIR = BASE_DIR
 
 
 class Config:
@@ -11,12 +23,14 @@ class Config:
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "dev-change-this-key")
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",
-        f"sqlite:///{BASE_DIR / 'flask.db'}",
+        f"sqlite:///{DATA_DIR / 'flask.db'}",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
-    LOG_FILE = os.environ.get("LOG_FILE", str(BASE_DIR / "logs" / "app.log"))
-
+    LOG_FILE = os.environ.get(
+        "LOG_FILE",
+        str(DATA_DIR / "logs" / "app.log"),
+    )
     DEBUG = os.environ.get("FLASK_DEBUG", "False").lower() in {
         "1", "true", "yes", "on",
     }

@@ -13,21 +13,18 @@ from processos.services.auditoria import registrar_auditoria
 sistema_bp = Blueprint("sistema", __name__, url_prefix="/sistema")
 
 
-def _encerrar_servidor() -> None:
-    shutdown = request.environ.get("werkzeug.server.shutdown")
+def _encerrar_servidor(shutdown) -> None:
     if shutdown is not None:
         shutdown()
         return
 
-    # O servidor atual e iniciado pelo inicializador local como processo separado.
-    # O encerramento do proprio processo evita deixar o Flask rodando em segundo plano.
     os._exit(0)
 
 
 @sistema_bp.post("/encerrar/")
 @login_required
 def encerrar():
-    usuario_id = current_user.id
+    shutdown = request.environ.get("werkzeug.server.shutdown")
     registrar_auditoria(
         "ENCERRAR",
         "Sistema",
@@ -38,6 +35,6 @@ def encerrar():
     logout_user()
 
     # Devolve a resposta ao navegador antes de encerrar o processo.
-    threading.Timer(0.25, _encerrar_servidor).start()
+    threading.Timer(0.25, _encerrar_servidor, args=(shutdown,)).start()
 
     return render_template("sistema/encerrando.html"), 200

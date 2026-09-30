@@ -24,6 +24,12 @@
     <div class="admin-action-grid">
       <a class="card admin-action-card" href="{{ url_for('admin.usuarios') }}"><strong>Gerenciar usuários</strong><span>Ative, desative e altere permissões das contas.</span></a>
       <a class="card admin-action-card" href="{{ url_for('admin.criar_usuario') }}"><strong>Criar usuário</strong><span>Cadastre uma conta diretamente pela administração.</span></a>
+      <form class="card admin-action-card" method="post" action="{{ url_for('admin.criar_backup') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <strong>Fazer backup</strong>
+        <span>Crie agora uma cópia segura do banco de dados local.</span>
+        <button class="button primary" type="submit">Criar backup</button>
+      </form>
     </div>
   </section>
 </div>

@@ -22,6 +22,32 @@ class DataJudServiceTests(unittest.TestCase):
             os.environ["DATAJUD_API_KEY"] = self.api_key_anterior
 
     @patch("processos.services.datajud.requests.post")
+    def test_requisicao_envia_endpoint_e_autenticacao_corretos(self, post):
+        resposta = Mock(status_code=200)
+        resposta.json.return_value = {"hits": {"hits": []}}
+        post.return_value = resposta
+
+        consultar_movimentacoes(
+            "0010220-08.2025.5.15.0012",
+            "trt15",
+        )
+
+        post.assert_called_once()
+        args = post.call_args
+        self.assertEqual(
+            args.args[0],
+            "https://api-publica.datajud.cnj.jus.br/api_publica_trt15/_search",
+        )
+        self.assertEqual(
+            args.kwargs["headers"]["Authorization"],
+            "APIKey chave-de-teste",
+        )
+        self.assertEqual(
+            args.kwargs["json"],
+            {"query": {"match": {"numeroProcesso": "00102200820255150012"}}},
+        )
+
+    @patch("processos.services.datajud.requests.post")
     def test_timeout_retorna_erro_amigavel(self, post):
         import requests
 
@@ -62,8 +88,11 @@ class DataJudServiceTests(unittest.TestCase):
                 "tst",
             )
 
+    @patch("processos.services.datajud.logger.warning")
     @patch("processos.services.datajud.requests.post")
-    def test_http_429_informa_limite_temporario(self, post):
+    def test_http_429_informa_limite_temporario_e_registra_log(
+        self, post, logger_warning
+    ):
         resposta = Mock(status_code=429)
         post.return_value = resposta
 
@@ -72,6 +101,12 @@ class DataJudServiceTests(unittest.TestCase):
                 "0000000-49.2026.8.00.0000",
                 "tst",
             )
+
+        logger_warning.assert_called_once()
+        self.assertIn("DataJud retornou HTTP %s", logger_warning.call_args.args[0])
+        self.assertEqual(logger_warning.call_args.args[1], 429)
+        self.assertEqual(logger_warning.call_args.args[2], "tst")
+        self.assertEqual(logger_warning.call_args.args[3], "0000")
 
     @patch("processos.services.datajud.requests.post")
     def test_http_500_informa_indisponibilidade(self, post):

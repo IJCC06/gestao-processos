@@ -1,6 +1,8 @@
 from functools import wraps
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+import os
+
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from processos.extensions import db
@@ -38,6 +40,107 @@ def index():
         datajud_configurado=bool(__import__("os").environ.get("DATAJUD_API_KEY", "").strip()),
         usuarios_recentes=usuarios,
     )
+
+
+
+
+@admin_bp.route("/configuracao/", methods=["GET", "POST"])
+@admin_required
+def configuracao():
+    from config.settings import DATA_DIR
+
+    if request.method == "POST":
+        datajud_key = request.form.get("datajud_api_key", "").strip()
+
+        if not datajud_key:
+            flash("Informe uma chave da API DataJud.", "error")
+            return render_template(
+                "admin/configuracao.html",
+                datajud_configurado=bool(os.environ.get("DATAJUD_API_KEY", "").strip()),
+            )
+
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        env_file = DATA_DIR / ".env"
+
+        valores = {}
+        if env_file.exists():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                chave, valor = line.split("=", 1)
+                valores[chave.strip()] = valor.strip()
+
+        valores["FLASK_SECRET_KEY"] = os.environ.get(
+            "FLASK_SECRET_KEY",
+            valores.get("FLASK_SECRET_KEY", ""),
+        )
+        valores["FLASK_DEBUG"] = os.environ.get(
+            "FLASK_DEBUG",
+            valores.get("FLASK_DEBUG", "False"),
+        )
+        valores["DATAJUD_API_KEY"] = datajud_key
+        valores.pop("DATABASE_URL", None)
+
+        env_file.write_text(
+            "".join(f"{chave}={valor}\n" for chave, valor in valores.items()),
+            encoding="utf-8",
+        )
+        os.environ["DATAJUD_API_KEY"] = datajud_key
+
+        registrar_auditoria(
+            "ALTERAR",
+            "Sistema",
+            None,
+            "Chave da API DataJud configurada ou atualizada.",
+        )
+        db.session.commit()
+        flash("Chave da API DataJud salva com sucesso.", "success")
+        return redirect(url_for("admin.configuracao"))
+
+    return render_template(
+        "admin/configuracao.html",
+        datajud_configurado=bool(os.environ.get("DATAJUD_API_KEY", "").strip()),
+    )
+
+
+@admin_bp.post("/backup/")
+@admin_required
+def criar_backup():
+    from config.settings import DATA_DIR
+    from processos.services.backup import BackupError, backup_sqlite
+
+    database_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+    if not database_uri.startswith("sqlite"):
+        flash("O backup local está disponível apenas para bancos SQLite.", "error")
+        return redirect(url_for("admin.index"))
+
+    database_path = db.engine.url.database
+    backup_dir = os.environ.get(
+        "BACKUP_DIR",
+        os.path.join(str(DATA_DIR), "backups"),
+    )
+
+    try:
+        destino = backup_sqlite(
+            database_path=database_path,
+            backup_dir=backup_dir,
+            retention_days=30,
+        )
+    except BackupError as exc:
+        current_app.logger.exception("Falha ao criar backup pelo painel administrativo")
+        flash(f"Não foi possível criar o backup: {exc}", "error")
+        return redirect(url_for("admin.index"))
+
+    registrar_auditoria(
+        "BACKUP",
+        "Sistema",
+        None,
+        f"Backup local criado: {destino.name}.",
+    )
+    db.session.commit()
+    flash("Backup criado com sucesso.", "success")
+    return redirect(url_for("admin.index"))
 
 
 @admin_bp.get("/usuarios/")

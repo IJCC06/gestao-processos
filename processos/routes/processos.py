@@ -18,7 +18,7 @@ def normalizar_numero_cnj(valor):
     if len(digitos) != 20:
         return None
 
-    base = digitos[:7] + digitos[9:] + "0100"
+    base = digitos[:7] + digitos[9:] + "00"
     digito_verificador = 98 - (int(base) % 97)
     esperado = f"{digito_verificador:02d}"
 
