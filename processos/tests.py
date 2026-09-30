@@ -1,5 +1,6 @@
 import os
 import time
+import tempfile
 import unittest
 from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
@@ -110,6 +111,41 @@ class FluxosPrincipaisTests(unittest.TestCase):
             db.session.query(Usuario).delete()
             db.session.commit()
 
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "config.settings.DATA_DIR",
+            new=__import__("pathlib").Path(temp_dir),
+        ):
+            resposta = self.client.post(
+                "/configuracao-inicial/",
+                data={
+                    "username": "admin",
+                    "password": "senha-admin-123",
+                    "password_confirmation": "senha-admin-123",
+                    "datajud_api_key": "chave-datajud-teste",
+                },
+            )
+
+            self.assertEqual(resposta.status_code, 302)
+            self.assertIn("/login/", resposta.location)
+
+            env_file = __import__("pathlib").Path(temp_dir) / ".env"
+            self.assertIn(
+                "DATAJUD_API_KEY=chave-datajud-teste",
+                env_file.read_text(encoding="utf-8"),
+            )
+
+        with self.app.app_context():
+            usuario = Usuario.query.filter_by(username="admin").one()
+            self.assertTrue(usuario.is_admin)
+            self.assertTrue(usuario.is_active)
+            self.assertTrue(usuario.check_password("senha-admin-123"))
+
+    def test_configuracao_inicial_rejeita_chave_datajud_vazia(self):
+        with self.app.app_context():
+            db.session.query(Auditoria).delete()
+            db.session.query(Usuario).delete()
+            db.session.commit()
+
         resposta = self.client.post(
             "/configuracao-inicial/",
             data={
@@ -120,14 +156,42 @@ class FluxosPrincipaisTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual(resposta.status_code, 302)
-        self.assertIn("/login/", resposta.location)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn(
+            "Informe a chave da API DataJud".encode("utf-8"),
+            resposta.data,
+        )
 
+    def test_admin_pode_configurar_chave_datajud(self):
         with self.app.app_context():
-            usuario = Usuario.query.filter_by(username="admin").one()
-            self.assertTrue(usuario.is_admin)
-            self.assertTrue(usuario.is_active)
-            self.assertTrue(usuario.check_password("senha-admin-123"))
+            usuario = Usuario.query.filter_by(username="teste").one()
+            usuario.is_admin = True
+            db.session.commit()
+
+        self.login()
+
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "config.settings.DATA_DIR",
+            new=__import__("pathlib").Path(temp_dir),
+        ):
+            resposta = self.client.post(
+                "/admin/configuracao/",
+                data={"datajud_api_key": "chave-datajud-admin"},
+                follow_redirects=False,
+            )
+
+            self.assertEqual(resposta.status_code, 302)
+            self.assertIn("/admin/configuracao/", resposta.location)
+            self.assertEqual(
+                os.environ.get("DATAJUD_API_KEY"),
+                "chave-datajud-admin",
+            )
+
+            env_file = __import__("pathlib").Path(temp_dir) / ".env"
+            self.assertIn(
+                "DATAJUD_API_KEY=chave-datajud-admin",
+                env_file.read_text(encoding="utf-8"),
+            )
 
     def test_pagina_404_personalizada(self):
         self.login()
