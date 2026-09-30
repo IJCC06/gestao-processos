@@ -19,6 +19,7 @@ hiddenimports = [
     "alembic",
     "dotenv",
     "requests",
+    "logging.config",
 ]
 
 a = Analysis(
