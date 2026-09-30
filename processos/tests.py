@@ -133,6 +133,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
                 "DATAJUD_API_KEY=chave-datajud-teste",
                 env_file.read_text(encoding="utf-8"),
             )
+            os.environ.pop("DATAJUD_API_KEY", None)
 
         with self.app.app_context():
             usuario = Usuario.query.filter_by(username="admin").one()
@@ -192,6 +193,7 @@ class FluxosPrincipaisTests(unittest.TestCase):
                 "DATAJUD_API_KEY=chave-datajud-admin",
                 env_file.read_text(encoding="utf-8"),
             )
+            os.environ.pop("DATAJUD_API_KEY", None)
 
     def test_pagina_404_personalizada(self):
         self.login()
