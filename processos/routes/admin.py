@@ -1,6 +1,6 @@
-from functools import wraps
+from functools import wraps\n\nimport os
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from processos.extensions import db
@@ -38,6 +38,45 @@ def index():
         datajud_configurado=bool(__import__("os").environ.get("DATAJUD_API_KEY", "").strip()),
         usuarios_recentes=usuarios,
     )
+
+
+@admin_bp.post("/backup/")
+@admin_required
+def criar_backup():
+    from config.settings import DATA_DIR
+    from processos.services.backup import BackupError, backup_sqlite
+
+    database_uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
+    if not database_uri.startswith("sqlite"):
+        flash("O backup local está disponível apenas para bancos SQLite.", "error")
+        return redirect(url_for("admin.index"))
+
+    database_path = db.engine.url.database
+    backup_dir = os.environ.get(
+        "BACKUP_DIR",
+        os.path.join(str(DATA_DIR), "backups"),
+    )
+
+    try:
+        destino = backup_sqlite(
+            database_path=database_path,
+            backup_dir=backup_dir,
+            retention_days=30,
+        )
+    except BackupError as exc:
+        current_app.logger.exception("Falha ao criar backup pelo painel administrativo")
+        flash(f"Não foi possível criar o backup: {exc}", "error")
+        return redirect(url_for("admin.index"))
+
+    registrar_auditoria(
+        "BACKUP",
+        "Sistema",
+        None,
+        f"Backup local criado: {destino.name}.",
+    )
+    db.session.commit()
+    flash("Backup criado com sucesso.", "success")
+    return redirect(url_for("admin.index"))
 
 
 @admin_bp.get("/usuarios/")
