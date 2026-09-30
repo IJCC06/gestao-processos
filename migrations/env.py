@@ -1,5 +1,3 @@
-from logging.config import fileConfig
-
 from flask import current_app
 from alembic import context
 from processos.extensions import db
